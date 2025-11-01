@@ -236,11 +236,17 @@ class MessageHandler {
     if (normalized === '2' || 
         normalized === 'menu_2_talleres' ||
         matchesKeywords(normalized, ['talleres', 'ver talleres', 'talleres disponibles', 'taller', 'taller disponible'])) {
-      // Iniciar flujo de talleres
-      if (!this.workshopState) this.workshopState = {};
-      this.workshopState[to] = { step: 'list' };
+      // 1. Enviar la lista de talleres.
       response = messages.workshops.list;
       await whatsappService.sendMessage(to, response);
+      
+      // 2. Terminar la conversación: 
+      //    Eliminamos el estado de taller por seguridad, aunque ya no se haya iniciado.
+      if (this.workshopState) delete this.workshopState[to]; 
+      //    Marcamos la conversación como completada.
+      //    El handleIncomingMessage ignorará todos los mensajes siguientes hasta que el usuario envíe "hola".
+      this.completedConversations[to] = true; 
+      
       return;
     }
 
