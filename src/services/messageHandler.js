@@ -578,6 +578,7 @@ class MessageHandler {
   async handleEmergencyResponse(to, message, senderInfo) {
     const lower = message.toLowerCase().trim();
     
+    // --- Caso: Respuesta Afirmativa (SI) ---
     if (lower === 'sí' || lower === 'si' || lower === 'yes' || lower === 's') {
       // Enviar notificación al número del psicólogo
       const psychologistPhone = '573147120410'; // Formato WhatsApp: código país + número
@@ -593,24 +594,32 @@ class MessageHandler {
         
         console.error('Error enviando notificación de emergencia:', errorMessage || error?.message || error);
         
-        // Si el error es porque el número no está en la lista permitida
         if (errorCode === 131030) {
           console.error(`⚠️ IMPORTANTE: El número ${psychologistPhone} necesita ser agregado a la lista de destinatarios permitidos en Meta Business Manager.`);
         }
         
-        // Aún así, responder al usuario para no dejarle sin respuesta
         await whatsappService.sendMessage(to, messages.emergencyProfessionalRequested);
       }
       
+      // >>> LÍNEA AÑADIDA/MOVIDA: Marca la conversación como finalizada.
+      this.completedConversations[to] = true; 
+      
       delete this.emergencyResponseState[to];
+      
+    // --- Caso: Respuesta Negativa (NO) ---
     } else if (lower === 'no' || lower === 'n') {
       await whatsappService.sendMessage(to, messages.emergencyEncouragement);
+      
+      // >>> LÍNEA AÑADIDA: Marca la conversación como finalizada.
+      this.completedConversations[to] = true; 
+      
       delete this.emergencyResponseState[to];
+      
     } else {
       // Si no es SI ni NO, recordar la pregunta
       await whatsappService.sendMessage(to, 'Por favor, responde SI si deseas que un profesional te contacte, o NO si prefieres continuar por tu cuenta.');
     }
-  }
+}
 
   async handleCancelModifyFlow(to, message) {
     const state = this.cancelModifyState[to];
