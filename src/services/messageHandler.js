@@ -485,8 +485,9 @@ if (normalized === '4' ||
         } else {
           state.email = message.trim(); // guardar con formato original
           state.step = 'day';
+          this.appointmentState[to] = state; // Persistir estado explícitamente
           response = messages.appointment.askDay;
-          console.log(`✅ Email válido, avanzando al paso 'day'`);
+          console.log(`✅ Email válido, avanzando al paso 'day' | Response: ${response ? 'Definido' : 'UNDEFINED'}`);
         }
         break;
       }
@@ -504,7 +505,9 @@ if (normalized === '4' ||
         } else {
           state.day = text; // conservar tal cual lo escribió
           state.step = 'time';
+          this.appointmentState[to] = state; // Persistir estado explícitamente
           response = messages.appointment.askTime;
+          console.log(`✅ Día válido: "${text}", avanzando al paso 'time' | Response: ${response ? 'Definido' : 'UNDEFINED'}`);
         }
         break;
       }
