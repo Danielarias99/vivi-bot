@@ -372,20 +372,22 @@ if (normalized === '4' ||
       appointment.career || 'N/A',
       appointment.phone || 'N/A',
       appointment.email,
-      appointment.availability,
+      appointment.day,           // Día separado
+      appointment.time,          // Hora separada
       new Date().toISOString()
     ];
 
-    // TODO: Google Sheets - Desactivado temporalmente hasta configurarse
-    // Cuando esté listo, descomentar esto:
-    // setImmediate(async () => {
-    //   try {
-    //     await appendToSheet(userData, 'citas');
-    //     console.log('✅ Cita guardada en Google Sheets');
-    //   } catch (err) {
-    //     console.warn('⚠️ Google Sheets no disponible, continuando sin guardar:', err?.message || 'Error desconocido');
-    //   }
-    // });
+    // Google Sheets - Guardar cita en segundo plano
+    console.log('📊 Intentando guardar cita en Google Sheets...');
+    setImmediate(async () => {
+      try {
+        await appendToSheet(userData, 'citas');
+        console.log('✅ Cita guardada en Google Sheets correctamente');
+      } catch (err) {
+        console.error('❌ Error guardando en Google Sheets:', err?.message || 'Error desconocido');
+        console.warn('⚠️ El bot continuará funcionando normalmente sin guardar en Sheets');
+      }
+    });
 
     // Marcar conversación como completada ANTES de enviar el mensaje
     this.completedConversations[to] = true;
@@ -478,36 +480,49 @@ if (normalized === '4' ||
           response = 'Por favor, ingresa tu correo institucional válido (termina en @correounivalle.edu.co). Ejemplo: nombre.apellido@correounivalle.edu.co';
         } else {
           state.email = message.trim(); // guardar con formato original
-          state.step = 'availability';
-          response = messages.appointment.askAvailability;
+          state.step = 'day';
+          response = messages.appointment.askDay;
         }
         break;
       }
-      case 'availability':
-        {
-          const text = message.trim();
-          const lower = text.toLowerCase();
-          const dias = [
-            'lunes','martes','miercoles','miércoles','jueves','viernes','sabado','sábado','domingo'
-          ];
-          const tieneDia = dias.some(d => lower.includes(d));
-          // 24h HH:MM or 12h H:MM am/pm (with variations)
-          // Mejorar regex para capturar horas como "8:30 am" o "08:30 AM"
-          const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
-          const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s*(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
-          const tieneHora = re24h.test(lower) || re12h.test(lower);
+      case 'day': {
+        const text = message.trim();
+        const lower = text.toLowerCase();
+        const dias = [
+          'lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 
+          'sabado', 'sábado', 'domingo', 'cualquier dia', 'cualquier día'
+        ];
+        const tieneDia = dias.some(d => lower.includes(d));
 
-          if (!tieneDia || !tieneHora) {
-            response = 'Por favor indica un día de la semana y una hora válida. Ejemplos: "martes 10:30 a.m." o "viernes 14:00"';
-            await whatsappService.sendMessage(to, response);
-          } else {
-            state.availability = text; // conservar tal cual lo escribió
-            // completeAppointment ya envía los mensajes, no necesitamos response
-            await this.completeAppointment(to);
-            return; // Salir aquí para no enviar un mensaje adicional
-          }
+        if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
+          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", "miércoles", etc.\n\nO escribe "cualquier día" si no tienes preferencia.';
+        } else {
+          state.day = text; // conservar tal cual lo escribió
+          state.step = 'time';
+          response = messages.appointment.askTime;
         }
         break;
+      }
+      case 'time': {
+        const text = message.trim();
+        const lower = text.toLowerCase();
+        
+        // Validar formato de hora: 24h HH:MM or 12h H:MM am/pm
+        const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
+        const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s*(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
+        const tieneHora = re24h.test(lower) || re12h.test(lower) || lower === 'cualquier hora';
+
+        if (!tieneHora) {
+          response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora" si no tienes preferencia.';
+          await whatsappService.sendMessage(to, response);
+        } else {
+          state.time = text; // conservar tal cual lo escribió
+          // completeAppointment ya envía los mensajes, no necesitamos response
+          await this.completeAppointment(to);
+          return; // Salir aquí para no enviar un mensaje adicional
+        }
+        break;
+      }
     }
     if (response) {
       await whatsappService.sendMessage(to, response);

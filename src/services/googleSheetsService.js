@@ -39,10 +39,16 @@ const getAuth = async () => {
 
 const appendToSheet = async (data, rangeName = 'reservas') => {
     try {
+        console.log(`🔐 Autenticando con Google Sheets...`);
         const authClient = await getAuth();
         const spreadsheetId = '1b52e3kbbhD5Gp1d88pEeIeRnVn0b6KKgAoArxBHVjkA'
-
+        
+        console.log(`📝 Guardando datos en hoja: "${rangeName}"`);
+        console.log(`📊 Datos a guardar:`, data);
+        
         await addRowToSheet(authClient, spreadsheetId, rangeName, data);
+        
+        console.log(`✅ Datos agregados correctamente a Google Sheets`);
         return 'Datos correctamente agregados'
     } catch (error) {
         // Manejar errores específicos de autenticación/configuración
@@ -51,8 +57,11 @@ const appendToSheet = async (data, rangeName = 'reservas') => {
         if (errorMessage.includes('Invalid JWT') || errorMessage.includes('invalid_grant')) {
             console.warn('⚠️ Google Sheets no está configurado correctamente. Las credenciales son inválidas o no están disponibles.');
             console.warn('El bot continuará funcionando normalmente sin guardar en Sheets.');
+        } else if (errorMessage.includes('Unable to parse range')) {
+            console.error(`❌ Error: La hoja "${rangeName}" no existe en el documento de Google Sheets.`);
+            console.error('💡 Asegúrate de crear una hoja con ese nombre exacto.');
         } else {
-            console.error('Error en appendToSheet:', errorMessage);
+            console.error('❌ Error en appendToSheet:', errorMessage);
         }
         
         // No lanzar el error - devolver null para indicar que falló pero no crashear
