@@ -14,9 +14,8 @@
       askStudentCode: 'Gracias. Indica tu código estudiantil:',
       askCareer: '¿Cuál es tu programa o carrera?',
       askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co):',
-      askDay: 'Perfecto. ¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, miércoles, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
-      askTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
-      summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nTeléfono: ${data.phone || 'N/A'}\nCorreo: ${data.email}\nDía preferido: ${data.day}\nHora preferida: ${data.time}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
+      askAvailability: 'Indica tu fecha y horario preferidos (ej: martes 10:30 a.m.). Si no tienes preferencia, escribe “cualquier horario”.',
+      summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nTeléfono: ${data.phone || 'N/A'}\nCorreo: ${data.email}\nFecha/Hora preferida: ${data.availability}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
     },
     workshops: {
       list: 'Estos son los talleres emocionales disponibles esta semana:\n\n🧘‍♂️ Taller de manejo del estrés – martes 10:00 a.m. Campus Las Balsas, salón 223\n💬 Taller de comunicación asertiva – jueves 3:00 p.m. Campus Bolivar, salón 101. \n\n ¡Te esperamos!💙. \n\n Si necesitas hacer otra consulta, escribe "hola" para comenzar de nuevo.',
@@ -34,6 +33,19 @@
     resourceMenuText: 'Por favor, elige la categoría de recursos que deseas explorar:\n\n1️⃣ Audio (Relajación, Meditación)\n2️⃣ Video (Pausas activas, Ejercicios)\n3️⃣ Imagen (Infografías, Técnicas)\n4️⃣ Documento (Guías, Información)\n\nResponde con el número de la opción.',
     resourceSelectionPrompt: (type) => `Has seleccionado **${type}**.\n\nPor favor, elige el recurso que deseas ver, respondiendo con el número:\n`,
     // >>> FIN NUEVOS MENSAJES <<<
+    // DENTRO DE const messages = { ... }
+
+// ... (otros mensajes)
+
+wellbeingResources: 'Recursos de bienestar: \n- Respiración 4-7-8 (relajación)\n- Identifica y etiqueta tus emociones\n- Descanso breve: estiramientos y pausa consciente\n- Busca apoyo en tu red cercana\nSi prefieres, podemos agendar una cita (opción 2).',
+
+// 🚨 COMIENZO DE NUEVOS MENSAJES PARA FLUJO DE RECURSOS
+
+resourceMenuText: 'Por favor, elige la categoría de recursos que deseas explorar:\n1️⃣ Audio (Relajación, Meditación)\n2️⃣ Video (Pausas activas, Ejercicios)\n3️⃣ Imagen (Infografías, Técnicas)\n4️⃣ Documento (Guías, Información)\n\nResponde con el número de la opción.',
+
+resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${category}**.\n\nPor favor, elige el recurso que deseas ver, respondiendo con el número:\n`,
+
+// ... (otros mensajes)
     briefOrientationIntro: 'Cuéntame brevemente qué te preocupa. Puedo darte una orientación inicial.',
     briefOrientationFollowup: '¿Esta orientación fue de ayuda?',
     notUnderstood: 'No entendí tu selección. Por favor elige una opción del menú.',
