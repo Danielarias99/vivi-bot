@@ -514,7 +514,6 @@ if (normalized === '4' ||
 
         if (!tieneHora) {
           response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora" si no tienes preferencia.';
-          await whatsappService.sendMessage(to, response);
         } else {
           state.time = text; // conservar tal cual lo escribió
           // completeAppointment ya envía los mensajes, no necesitamos response
