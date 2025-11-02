@@ -274,8 +274,12 @@ class MessageHandler {
     if (normalized === '4' || 
         normalized === 'menu_4_recursos' ||
         matchesKeywords(normalized, ['recursos', 'bienestar', 'recursos de bienestar', 'recurso', 'materiales', 'material'])) {
-      // Enviar menú interactivo de recursos de bienestar (lista con opciones)
-      await this.sendWellbeingResourcesMenu(to);
+      
+      // Iniciar el flujo de selección de recursos por sub-menú de texto
+      // (Asumiendo que has añadido resourceState en el constructor)
+      this.resourceState[to] = { step: 'category_select' }; 
+      response = messages.resourceMenuText; // Mensaje del sub-menú de categorías
+      await whatsappService.sendMessage(to, response);
       return;
     }
 
