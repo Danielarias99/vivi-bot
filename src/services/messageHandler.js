@@ -332,25 +332,7 @@ if (normalized === '4' ||
       return;
     }
 
-    // Si no coincide con ninguna opción del menú principal, verificar si es un recurso de bienestar
-    // Manejo de selección de recursos de bienestar desde el menú interactivo
-    {
-      // Primero buscar por id exacto
-      let resource = wellbeingResources.find(r => r.id === option || r.id === normalized);
-      
-      // Si no se encuentra y es un número (1, 2, 3, 4), buscar por índice
-      if (!resource && /^\d+$/.test(normalized)) {
-        const index = parseInt(normalized) - 1; // Convertir a índice base 0
-        if (index >= 0 && index < wellbeingResources.length) {
-          resource = wellbeingResources[index];
-        }
-      }
-      
-      if (resource) {
-        await this.handleWellbeingResource(to, resource);
-        return;
-      }
-    }
+    
 
     // fallback: mantener compatibilidad con opciones antiguas
     if (normalized.includes('emergencia')) {
