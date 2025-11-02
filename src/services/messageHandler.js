@@ -307,6 +307,10 @@ class MessageHandler {
       response = 'Te comparto nuestra ubicación:';
       await whatsappService.sendMessage(to, response);
       await this.sendLocation(to);
+      
+      // >>> ESTA LÍNEA ES LA CLAVE PARA DETENER LA CONVERSACIÓN
+      this.completedConversations[to] = true; 
+      
       return;
     }
 
