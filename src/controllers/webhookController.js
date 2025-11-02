@@ -24,14 +24,18 @@ class WebhookController {
     // Check if this message was already processed
     if (message) {
       const messageId = message.id;
+      const messageText = message.text?.body || message.interactive?.button_reply?.id || '[no text]';
+      
+      console.log(`📨 Mensaje recibido - ID: ${messageId.substring(0, 20)}... | Texto: "${messageText}" | De: ${message.from}`);
       
       if (this.processedMessages.has(messageId)) {
-        console.log(`⚠️ Mensaje duplicado detectado y omitido: ${messageId}`);
+        console.log(`⚠️ Mensaje duplicado detectado y omitido: ${messageId.substring(0, 20)}...`);
         return;
       }
 
       // Mark message as processed
       this.processedMessages.add(messageId);
+      console.log(`✅ Mensaje marcado como procesado: ${messageId.substring(0, 20)}...`);
       
       // Clean old message IDs (keep only last 1000)
       if (this.processedMessages.size > 1000) {
@@ -45,6 +49,7 @@ class WebhookController {
       // Process the message
       try {
         await messageHandler.handleIncomingMessage(message, senderInfo);
+        console.log(`✅ Mensaje procesado exitosamente: ${messageId.substring(0, 20)}...`);
       } catch (error) {
         console.error('❌ Error procesando mensaje:', error.message || error);
       }

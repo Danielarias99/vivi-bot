@@ -2,6 +2,7 @@ import sendToWhatsApp from "../services/httpRequest/sendToWhatsApp.js";
 
 class WhatsAppService {
   async sendMessage(to, body, messageId) {
+    console.log(`📨 WhatsAppService.sendMessage - Para: ${to} | Mensaje: "${body.substring(0, 60)}..."`);
     const data = {
       messaging_product: 'whatsapp',
       to,
@@ -9,6 +10,7 @@ class WhatsAppService {
     };
 
     await sendToWhatsApp(data);
+    console.log(`✅ Mensaje enviado exitosamente a ${to}`);
   }
 
   async sendInteractiveButtons(to, bodyText, buttons) {

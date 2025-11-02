@@ -407,6 +407,8 @@ if (normalized === '4' ||
       return;
     }
     
+    console.log(`🔄 Procesando appointment flow - Paso: ${state.step} | Mensaje: "${message}"`);
+    
     let response;
 
     switch (state.step) {
@@ -521,7 +523,11 @@ if (normalized === '4' ||
       }
     }
     if (response) {
+      console.log(`📤 Enviando respuesta en appointment flow: "${response.substring(0, 50)}..."`);
       await whatsappService.sendMessage(to, response);
+      console.log(`✅ Respuesta enviada exitosamente`);
+    } else {
+      console.log(`⚠️ No hay respuesta para enviar en este paso`);
     }
   }
 
