@@ -175,7 +175,7 @@ class MessageHandler {
   }
 
   async handleWellbeingResource(to, resource) {
-    // Validar que el recurso tenga URL configurada
+    // Validate resource URL is configured
     if (!resource.url || resource.url.trim().length === 0) {
       await whatsappService.sendMessage(
         to,
@@ -185,10 +185,15 @@ class MessageHandler {
     }
 
     try {
-      // Enviar el recurso multimedia
+      console.log(`📤 Enviando recurso multimedia: ${resource.type} - ${resource.title}`);
+      console.log(`🔗 URL: ${resource.url}`);
+      
+      // Send multimedia resource
       await whatsappService.sendMediaMessage(to, resource.type, resource.url, resource.title);
       
-      // Mensaje de confirmación amigable según el tipo de recurso
+      console.log(`✅ Recurso multimedia enviado exitosamente`);
+      
+      // Friendly confirmation message based on resource type
       let followUpMessage = `✅ Te he enviado: **${resource.title}**\n\n`;
       
       switch (resource.type) {
@@ -212,7 +217,8 @@ class MessageHandler {
       
       await whatsappService.sendMessage(to, followUpMessage);
     } catch (err) {
-      console.error('Error enviando recurso multimedia:', err?.message || err);
+      console.error('❌ Error enviando recurso multimedia:', err?.message || err);
+      console.error('❌ Error completo:', JSON.stringify(err?.response?.data || err, null, 2));
       await whatsappService.sendMessage(
         to,
         '❌ Lo siento, hubo un problema al enviar el recurso. Por favor, intenta de nuevo más tarde o escribe "hola" para volver al menú principal.'

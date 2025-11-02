@@ -65,10 +65,14 @@ class WhatsAppService {
         mediaObject.video = { link: mediaUrl, caption: caption };
         break;
       case 'document':
-        mediaObject.document = { link: mediaUrl, caption: caption, filename: 'Recursos_Bienestar_Univalle.pdf' };
+        mediaObject.document = { 
+          link: mediaUrl, 
+          caption: caption, 
+          filename: 'Recursos_Bienestar_Univalle.pdf' 
+        };
         break;
       default:
-        throw new Error('Not Supported Media Type');
+        throw new Error(`Not Supported Media Type: ${type}`);
     }
 
     const data = {
@@ -79,7 +83,14 @@ class WhatsAppService {
       ...mediaObject,
     };
 
-    await sendToWhatsApp(data);
+    console.log(`📡 Enviando a WhatsApp API - Tipo: ${type}`);
+    console.log(`📋 Payload:`, JSON.stringify(data, null, 2));
+
+    const result = await sendToWhatsApp(data);
+    
+    console.log(`✅ Respuesta de WhatsApp API:`, JSON.stringify(result, null, 2));
+    
+    return result;
   }
 
   async markAsRead(messageId) {
