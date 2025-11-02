@@ -474,13 +474,19 @@ if (normalized === '4' ||
       }
       case 'email': {
         const emailTrimmed = message.trim().toLowerCase();
-        const emailRegex = /^[\w-.]+@correounivalle\.edu\.co$/;
+        // Fixed regex: escape the hyphen or put it at the end
+        const emailRegex = /^[\w.\-]+@correounivalle\.edu\.co$/;
+        
+        console.log(`📧 Validando email: "${emailTrimmed}" | Match: ${emailRegex.test(emailTrimmed)}`);
+        
         if (!emailRegex.test(emailTrimmed)) {
           response = 'Por favor, ingresa tu correo institucional válido (termina en @correounivalle.edu.co). Ejemplo: nombre.apellido@correounivalle.edu.co';
+          console.log(`❌ Email inválido, enviando mensaje de error`);
         } else {
           state.email = message.trim(); // guardar con formato original
           state.step = 'day';
           response = messages.appointment.askDay;
+          console.log(`✅ Email válido, avanzando al paso 'day'`);
         }
         break;
       }
