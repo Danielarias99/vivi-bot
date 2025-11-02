@@ -17,11 +17,12 @@ Se ha activado la integración con Google Sheets para guardar las citas agendada
 | **C** | Nombre Completo | Nombre del estudiante | Juan Pérez |
 | **D** | Código Estudiantil | Código de estudiante | 2012345 |
 | **E** | Carrera | Programa académico | Ingeniería de Sistemas |
-| **F** | Teléfono | Número de contacto | 3001234567 |
-| **G** | Email | Correo institucional | juan.perez@correounivalle.edu.co |
-| **H** | Día Preferido | Día de la semana elegido | martes |
-| **I** | Hora Preferida | Horario elegido | 10:30 a.m. |
-| **J** | Timestamp | Fecha de registro | 2025-11-02T14:30:00.000Z |
+| **F** | Email | Correo institucional | juan.perez@correounivalle.edu.co |
+| **G** | Día Preferido | Día de la semana elegido | martes |
+| **H** | Hora Preferida | Horario elegido | 10:30 a.m. |
+| **I** | Timestamp | Fecha de registro | 2025-11-02T14:30:00.000Z |
+
+**Nota:** El número de teléfono del usuario ya se obtiene del campo WhatsApp (columna A), por lo que no se solicita por separado durante el flujo.
 
 ---
 
@@ -45,21 +46,19 @@ B1: Tipo de Cita
 C1: Nombre Completo
 D1: Código Estudiantil
 E1: Carrera
-F1: Teléfono
-G1: Email
-H1: Día Preferido
-I1: Hora Preferida
-J1: Fecha de Registro
+F1: Email
+G1: Día Preferido
+H1: Hora Preferida
+I1: Fecha de Registro
 ```
 
 ### 4️⃣ **Formato Recomendado (Opcional)**
    - Fila 1: **Negrita** y con color de fondo
    - Columna A: Formato de texto
    - Columna D: Formato de número
-   - Columna F: Formato de texto (para conservar el 0 inicial)
-   - Columna H: Formato de texto (día de la semana)
-   - Columna I: Formato de texto (hora)
-   - Columna J: Formato de fecha y hora
+   - Columna G: Formato de texto (día de la semana)
+   - Columna H: Formato de texto (hora)
+   - Columna I: Formato de fecha y hora
 
 ### 5️⃣ **Permisos de la Service Account**
    - Ve a la configuración del Sheet → **Compartir**

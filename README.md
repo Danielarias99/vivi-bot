@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# vivi-bot
-=======
 # Vivi Bot — Instrucciones de despliegue
 
 Este repositorio contiene el bot "Vivi" para WhatsApp (Cloud API). Aquí están los pasos para ejecutar localmente y desplegar en Railway.
@@ -104,5 +101,4 @@ Se incluye un `Dockerfile` minimal para construir una imagen. Railway puede cons
 - Si los recursos en S3 no son públicos, genera URLs firmadas y colócalas en `src/config/wellbeingResources.js`.
 - Antes de hacer deploy, prueba localmente el endpoint `/webhook` y que `messageHandler` funcione para las principales rutas de flujo.
 
-Si quieres, puedo realizar el despliegue inicial en Railway (con tu acceso) o seguir guiándote paso a paso.
->>>>>>> ae6e300 (chore: initial commit — prepare repo for Railway deployment)
+# vivi-bot

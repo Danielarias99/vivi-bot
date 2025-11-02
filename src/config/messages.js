@@ -9,14 +9,13 @@
     emergencyEncouragement: 'Entiendo tu situación. Es valiente que hayas buscado ayuda.\n\n💙 Recuerda que:\n- No estás solo/a, hay personas que se preocupan por ti\n- Los sentimientos difíciles son temporales, aunque ahora no lo parezca\n- Eres más fuerte de lo que crees\n- Pedir ayuda es una muestra de valentía, no de debilidad\n\nSi sientes que necesitas hablar con alguien en este momento, puedes contactar:\n- Línea 106 (24/7)\n- Línea 123 (emergencias)\n\nEstoy aquí para apoyarte. Si necesitas algo más, escribe "hola". 💙',
     appointment: {
       askType: '¿Qué tipo de cita deseas agendar?\n1. Presencial\n2. Virtual',
-      askPhone: 'Por favor, ingresa tu número de teléfono:',
       askName: ' Ahora, escribe tu nombre completo:',
       askStudentCode: 'Gracias. Indica tu código estudiantil:',
       askCareer: '¿Cuál es tu programa o carrera?',
       askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co):',
       askDay: 'Perfecto. ¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, miércoles, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
       askTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
-      summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nTeléfono: ${data.phone || 'N/A'}\nCorreo: ${data.email}\nDía preferido: ${data.day}\nHora preferida: ${data.time}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
+      summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nCorreo: ${data.email}\nDía preferido: ${data.day}\nHora preferida: ${data.time}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
     },
     workshops: {
       list: 'Estos son los talleres emocionales disponibles esta semana:\n\n🧘‍♂️ Taller de manejo del estrés – martes 10:00 a.m. Campus Las Balsas, salón 223\n💬 Taller de comunicación asertiva – jueves 3:00 p.m. Campus Bolivar, salón 101. \n\n ¡Te esperamos!💙. \n\n Si necesitas hacer otra consulta, escribe "hola" para comenzar de nuevo.',

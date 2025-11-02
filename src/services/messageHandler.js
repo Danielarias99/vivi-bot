@@ -365,16 +365,15 @@ if (normalized === '4' ||
     delete this.appointmentState[to];
 
     const userData = [
-      to,
-      appointment.type,
-      appointment.name,
-      appointment.studentCode || 'N/A',
-      appointment.career || 'N/A',
-      appointment.phone || 'N/A',
-      appointment.email,
-      appointment.day,           // Día separado
-      appointment.time,          // Hora separada
-      new Date().toISOString()
+      to,                              // WhatsApp del usuario
+      appointment.type,                // Presencial o Virtual
+      appointment.name,                // Nombre completo
+      appointment.studentCode || 'N/A', // Código estudiantil
+      appointment.career || 'N/A',     // Carrera
+      appointment.email,               // Email institucional
+      appointment.day,                 // Día preferido
+      appointment.time,                // Hora preferida
+      new Date().toISOString()         // Timestamp
     ];
 
     // Google Sheets - Guardar cita en segundo plano
@@ -456,17 +455,6 @@ if (normalized === '4' ||
           response = 'Por favor, ingresa tu programa o carrera.';
         } else {
           state.career = career;
-          state.step = 'phone';
-          response = messages.appointment.askPhone;
-        }
-        break;
-      }
-      case 'phone': {
-        const phone = message.replace(/\D/g, '');
-        if (phone.length !== 10) {
-          response = 'Por favor, ingresa un número de celular válido de 10 dígitos.';
-        } else {
-          state.phone = phone;
           state.step = 'email';
           response = messages.appointment.askEmail;
         }
