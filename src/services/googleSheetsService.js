@@ -40,7 +40,7 @@ const getAuth = async () => {
 const appendToSheet = async (data, rangeName = 'reservas') => {
     try {
         const authClient = await getAuth();
-        const spreadsheetId = '1qt4Adt_muJZf1LXlXjqRUcs5hDf6Zac1wzGiwHeH_Ns'
+        const spreadsheetId = '1b52e3kbbhD5Gp1d88pEeIeRnVn0b6KKgAoArxBHVjkA'
 
         await addRowToSheet(authClient, spreadsheetId, rangeName, data);
         return 'Datos correctamente agregados'
