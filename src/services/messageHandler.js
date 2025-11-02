@@ -50,6 +50,9 @@ class MessageHandler {
     this.cancelModifyState = {};
     this.emergencyResponseState = {};
     this.completedConversations = {}; // Almacenar conversaciones completadas
+    this.resourceState = {}; // 👈 ¡NUEVA LÍNEA!
+    // 👈 ¡AÑADE ESTA LÍNEA PARA ELIMINAR EL ERROR!
+    this.workshopState = {};
   }
 
   async handleIncomingMessage(message, senderInfo) {
@@ -85,6 +88,8 @@ class MessageHandler {
           delete this.emergencyResponseState[message.from];
           delete this.completedConversations[message.from]; // Reiniciar flag de conversación completada
           // Enviar saludo y menú principal
+          // >>> LÍNEA AÑADIDA: Reiniciar el estado de recursos
+          delete this.resourceState[message.from];
           await this.sendWelcomeMessage(message.from, message.id, senderInfo);
           await this.sendWelcomeMenu(message.from);
         } else if (this.completedConversations[message.from]) {
@@ -98,6 +103,9 @@ class MessageHandler {
           await this.handleWorkshopFlow(message.from, rawText);
         } else if (this.assistandState[message.from]) {
           await this.handleAssistandFlow(message.from, rawText);
+          // >>> NUEVA LÍNEA AÑADIDA: Manejar flujo de Recursos (Opción 4)
+        } else if (this.resourceState && this.resourceState[message.from]) {
+            await this.handleResourceFlow(message.from, rawText);
         } else if (this.cancelModifyState[message.from]) {
           await this.handleCancelModifyFlow(message.from, rawText);
         } else {
@@ -271,17 +279,16 @@ class MessageHandler {
     }
 
     // Opción 4: Recursos de bienestar
-    if (normalized === '4' || 
-        normalized === 'menu_4_recursos' ||
-        matchesKeywords(normalized, ['recursos', 'bienestar', 'recursos de bienestar', 'recurso', 'materiales', 'material'])) {
-      
-      // Iniciar el flujo de selección de recursos por sub-menú de texto
-      // (Asumiendo que has añadido resourceState en el constructor)
-      this.resourceState[to] = { step: 'category_select' }; 
-      response = messages.resourceMenuText; // Mensaje del sub-menú de categorías
-      await whatsappService.sendMessage(to, response);
-      return;
-    }
+if (normalized === '4' || 
+    normalized === 'menu_4_recursos' ||
+    matchesKeywords(normalized, ['recursos', 'bienestar', 'recursos de bienestar', 'recurso', 'materiales', 'material'])) {
+    
+    // Iniciar el flujo de selección de categorías por texto
+    this.resourceState[to] = { step: 'category_select' }; 
+    response = messages.resourceMenuText; // Este mensaje debe estar en messages.js (lo verificaremos al final)
+    await whatsappService.sendMessage(to, response);
+    return;
+}
 
     // Opción 5: Cancelar o modificar una cita
     if (normalized === '5' ||
@@ -532,6 +539,87 @@ class MessageHandler {
     await whatsappService.sendMessage(to, response);
     await whatsappService.sendInteractiveButtons(to, menuMessage, buttons);
   }
+  // Colócala junto a otras funciones de flujo como handleAppointmentFlow.
+  async handleResourceFlow(to, message) {
+    const state = this.resourceState[to];
+    const normalized = message.toLowerCase().trim();
+    let response;
+
+    // 1. Paso: Seleccionar Categoría (Audio, Video, Imagen, Documento)
+    if (state.step === 'category_select') {
+        let selectedCategory;
+        const categoryMap = {
+            '1': 'audio',
+            '2': 'video',
+            '3': 'image',
+            '4': 'document',
+        };
+
+        selectedCategory = categoryMap[normalized];
+
+        if (selectedCategory) {
+            // Filtrar recursos por la categoría seleccionada
+            const resources = wellbeingResources.filter(r => r.type === selectedCategory);
+
+            if (resources.length === 0) {
+                response = `Lo siento, no hay recursos de tipo **${selectedCategory}** disponibles en este momento. Por favor, elige otra opción del menú de categorías.`;
+                await whatsappService.sendMessage(to, response);
+                // Quedarse en el mismo estado para que el usuario elija de nuevo
+                return;
+            }
+
+            // Crear el mensaje con la lista numerada de recursos
+            let resourceList = '';
+            resources.forEach((r, index) => {
+                resourceList += `${index + 1} - ${r.title}\n`;
+            });
+
+            // Guardar los recursos filtrados en el estado y pedir selección
+            state.step = 'resource_select';
+            state.availableResources = resources;
+            state.category = selectedCategory;
+
+            // messages.resourceSelectionPrompt debe ser una función en messages.js
+            response = messages.resourceSelectionPrompt(selectedCategory);
+            response += resourceList;
+            response += '\n\nResponde con el número del recurso que deseas.';
+            
+            await whatsappService.sendMessage(to, response);
+            return;
+        } else {
+            // Si la respuesta no es 1, 2, 3 o 4
+            response = 'Opción no válida. Por favor, elige 1, 2, 3 o 4 para seleccionar la categoría de recursos.';
+        }
+
+    // 2. Paso: Seleccionar Recurso Específico
+    } else if (state.step === 'resource_select') {
+        const index = parseInt(normalized) - 1; // Convertir a índice base 0
+        const resources = state.availableResources;
+
+        if (!isNaN(index) && index >= 0 && index < resources.length) {
+            const selectedResource = resources[index];
+
+            // ⚠️ Llamar a la función que envía el recurso y limpia el estado.
+            await this.handleWellbeingResource(to, selectedResource);
+            
+            // La conversación finaliza después de enviar el recurso, según la lógica de Opción 4.
+            // Limpiar el estado de recurso y marcar como completada.
+            delete this.resourceState[to];
+            this.completedConversations[to] = true;
+            return;
+
+        } else {
+            // Número fuera de rango o texto no numérico
+            response = `Opción no válida. Por favor, elige el número (1 al ${resources.length}) del recurso que quieres ver.`;
+        }
+    }
+    
+    // Si llegamos aquí, enviamos la respuesta de error y nos quedamos en el mismo estado
+    if (response) {
+        await whatsappService.sendMessage(to, response);
+    }
+}
+
 
   async sendContact(to) {
     const contact = {
