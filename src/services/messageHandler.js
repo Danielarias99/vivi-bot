@@ -278,17 +278,24 @@ class MessageHandler {
       return;
     }
 
-    // Opción 4: Recursos de bienestar
+    // DENTRO DE LA FUNCIÓN async handleMenuOption(to, option)
+
+
+
+// Opción 4: Recursos de bienestar
 if (normalized === '4' || 
     normalized === 'menu_4_recursos' ||
     matchesKeywords(normalized, ['recursos', 'bienestar', 'recursos de bienestar', 'recurso', 'materiales', 'material'])) {
     
-    // Iniciar el flujo de selección de categorías por texto
+    // AHORA: INICIAR EL NUEVO FLUJO DE SUB-MENÚ DE TEXTO
     this.resourceState[to] = { step: 'category_select' }; 
-    response = messages.resourceMenuText; // Este mensaje debe estar en messages.js (lo verificaremos al final)
+    // Usar el nuevo mensaje de texto con las opciones (1, 2, 3, 4)
+    response = messages.resourceMenuText; 
     await whatsappService.sendMessage(to, response);
     return;
 }
+
+
 
     // Opción 5: Cancelar o modificar una cita
     if (normalized === '5' ||
