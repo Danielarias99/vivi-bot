@@ -29,6 +29,10 @@
     infoServices: 'Atención psicológica en Univalle: orientación inicial, acompañamiento breve, y remisiones cuando se requiere. Horario de atención: Lunes a Viernes 8:00 a 17:00. Para casos urgentes utiliza la opción 4.',
     contactProfessional: 'Puedo conectarte con el equipo de Bienestar Universitario. ¿Deseas que alguien te contacte? Responde SI para compartir tus datos de contacto.',
     wellbeingResources: 'Recursos de bienestar: \n- Respiración 4-7-8 (relajación)\n- Identifica y etiqueta tus emociones\n- Descanso breve: estiramientos y pausa consciente\n- Busca apoyo en tu red cercana\nSi prefieres, podemos agendar una cita (opción 2).',
+    // >>> NUEVOS MENSAJES PARA LA OPCIÓN 4: SUB-MENÚ DE RECURSOS <<<
+    resourceMenuText: 'Por favor, elige la categoría de recursos que deseas explorar:\n\n1️⃣ Audio (Relajación, Meditación)\n2️⃣ Video (Pausas activas, Ejercicios)\n3️⃣ Imagen (Infografías, Técnicas)\n4️⃣ Documento (Guías, Información)\n\nResponde con el número de la opción.',
+    resourceSelectionPrompt: (type) => `Has seleccionado **${type}**.\n\nPor favor, elige el recurso que deseas ver, respondiendo con el número:\n`,
+    // >>> FIN NUEVOS MENSAJES <<<
     briefOrientationIntro: 'Cuéntame brevemente qué te preocupa. Puedo darte una orientación inicial.',
     briefOrientationFollowup: '¿Esta orientación fue de ayuda?',
     notUnderstood: 'No entendí tu selección. Por favor elige una opción del menú.',
