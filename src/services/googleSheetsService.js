@@ -26,10 +26,26 @@ async function addRowToSheet(auth, spreadsheetId, rangeName, values) {
 
 const getAuth = async () => {
     try {
-        const auth = new google.auth.GoogleAuth({
-            keyFile: path.join(process.cwd(), 'src/credentials', 'credentials.json'),
-            scopes: ['https://www.googleapis.com/auth/spreadsheets']
-        });
+        let authConfig;
+        
+        // Check if running in Railway (or any cloud environment with env var)
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+            console.log('🔑 Using Google credentials from environment variable');
+            const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+            authConfig = {
+                credentials: credentials,
+                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+            };
+        } else {
+            // Local development: use credentials file
+            console.log('📁 Using Google credentials from file');
+            authConfig = {
+                keyFile: path.join(process.cwd(), 'src/credentials', 'credentials.json'),
+                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+            };
+        }
+        
+        const auth = new google.auth.GoogleAuth(authConfig);
         return await auth.getClient();
     } catch (error) {
         console.error('Error al autenticar con Google Sheets:', error?.message || error);
