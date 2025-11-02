@@ -31,7 +31,13 @@ const getAuth = async () => {
         // Check if running in Railway (or any cloud environment with env var)
         if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
             console.log('🔑 Using Google credentials from environment variable');
-            const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+            const credentialsRaw = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+            // Fix the private_key: replace literal \n with actual newlines
+            const credentials = {
+                ...credentialsRaw,
+                private_key: credentialsRaw.private_key.replace(/\\n/g, '\n')
+            };
+            console.log('✅ Private key parsed and newlines fixed');
             authConfig = {
                 credentials: credentials,
                 scopes: ['https://www.googleapis.com/auth/spreadsheets']
