@@ -23,21 +23,21 @@ const resources = [
     title: 'Audio: Relajación guiada',
     description: 'Audio corto para reducir el estrés (3-5 min).',
     type: 'audio',
-    url: '' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/audio-relajacion.aac)
+    url: 'https://vivi-bot-uni.s3.us-east-2.amazonaws.com/audio%2Cbienestar.ogg' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/audio-relajacion.aac)
   },
   {
     id: 'recurso_video_estiramiento',
     title: 'Video: Pausa activa y estiramientos',
     description: 'Rutina breve para realizar pausas en el estudio o trabajo.',
     type: 'video',
-    url: '' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/video-estiramiento.mp4)
+    url: 'https://vivi-bot-uni.s3.us-east-2.amazonaws.com/assets_task_01jsvgfh87eq3thxjkaq0pk360_task_01jsvgfh87eq3thxjkaq0pk360_genid_c2488621-bde8-488a-89dd-18c7a50bdcff_25_04_27_11_42_165238_videos_00000_99813810_source.mp4' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/video-estiramiento.mp4)
   },
   {
     id: 'recurso_imagen_infografia',
     title: 'Infografía: Técnicas de respiración',
     description: 'Imagen con pasos para respiración 4-7-8.',
     type: 'image',
-    url: '' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/infografia-respiracion.png)
+    url: 'https://vivi-bot-uni.s3.us-east-2.amazonaws.com/equipo+de+bienestar.jpg' // TODO: INSERTAR AQUÍ LA URL DE S3 (ej: https://vivi-bot-uni.s3.amazonaws.com/infografia-respiracion.png)
   },
   {
     id: 'recurso_documento_guia',
