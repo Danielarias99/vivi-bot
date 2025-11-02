@@ -444,9 +444,6 @@ if (normalized === '4' ||
           state.studentCode = code;
           state.step = 'career';
           response = messages.appointment.askCareer;
-          // Enviar inmediatamente y salir para evitar procesamiento duplicado
-          await whatsappService.sendMessage(to, response);
-          return;
         }
         break;
       }
