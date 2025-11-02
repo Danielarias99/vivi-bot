@@ -44,7 +44,7 @@ const resources = [
     title: 'Guía: Recursos y servicios',
     description: 'Documento PDF con información de contactos y servicios.',
     type: 'document',
-    url: 'https://vivi-bot-uni.s3.amazonaws.com/Recursos_Bienestar_Univalle.pdf'
+    url: 'https://vivi-bot-uni.s3.us-east-2.amazonaws.com/Recursos_Bienestar_Univalle.pdf'
     // ✅ Este recurso ya tiene URL configurada
   }
 ];
