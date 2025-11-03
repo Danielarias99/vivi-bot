@@ -3,6 +3,7 @@ import appendToSheet, { readSheet, updateRowInSheet, deleteRowInSheet } from './
 import messages from '../config/messages.js';
 import wellbeingResources from '../config/wellbeingResources.js';
 import { preguntarAGemini } from './geminiService.js';
+import appointmentReminderService from './appointmentReminderService.js';
 
 class MessageHandler {
   async handleWorkshopFlow(to, message) {
@@ -370,6 +371,15 @@ if (normalized === '4' ||
     const appointment = this.appointmentState[to];
     delete this.appointmentState[to];
 
+    // Calcular fecha exacta de la cita
+    const appointmentDate = appointmentReminderService.calculateAppointmentDate(
+      appointment.day,
+      appointment.time
+    );
+    const appointmentDateStr = appointmentDate 
+      ? appointmentDate.toISOString() 
+      : 'No calculada';
+
     const userData = [
       to,                              // WhatsApp del usuario
       appointment.type,                // Presencial o Virtual
@@ -379,7 +389,8 @@ if (normalized === '4' ||
       appointment.email,               // Email institucional
       appointment.day,                 // Día preferido
       appointment.time,                // Hora preferida
-      new Date().toISOString()         // Timestamp
+      new Date().toISOString(),        // Timestamp de registro
+      appointmentDateStr               // Fecha calculada de la cita
     ];
 
     // Google Sheets - Guardar cita en segundo plano

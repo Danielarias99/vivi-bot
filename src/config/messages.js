@@ -16,6 +16,7 @@
       askDay: 'Perfecto. ¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, miércoles, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
       askTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
       summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nCorreo: ${data.email}\nDía preferido: ${data.day}\nHora preferida: ${data.time}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
+      reminder: (data) => `🔔 Recordatorio de cita\n\nHola ${data.name}!\n\nTe recordamos que tienes una cita programada:\n\n📅 Día: ${data.day}\n🕐 Hora: ${data.time}\n📍 Tipo: ${data.type}\n\nPor favor, asegúrate de estar disponible a esta hora. Si necesitas cancelar o modificar tu cita, escribe "hola" y selecciona la opción 5.\n\n¡Nos vemos pronto! 💙`,
     },
     workshops: {
       list: 'Estos son los talleres emocionales disponibles esta semana:\n\n🧘‍♂️ Taller de manejo del estrés – martes 10:00 a.m. Campus Las Balsas, salón 223\n💬 Taller de comunicación asertiva – jueves 3:00 p.m. Campus Bolivar, salón 101. \n\n ¡Te esperamos!💙. \n\n Si necesitas hacer otra consulta, escribe "hola" para comenzar de nuevo.',
@@ -47,7 +48,7 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
 
 // ... (otros mensajes)
     briefOrientationIntro: 'Cuéntame brevemente qué te preocupa. Puedo darte una orientación inicial.',
-    briefOrientationFollowup: '¿Esta orientación fue de ayuda? ¿Necesitas hacer otra consulta?',
+    briefOrientationFollowup: 'Espero que esta orientación fuera de tu ayuda. ¿Necesitas hacer otra consulta?',
     
     aiFarewell: 'Entiendo. Me alegra haber podido ayudarte. 💙\n\nSi necesitas más apoyo en otro momento, escribe "hola" para comenzar de nuevo. ¡Cuídate mucho!',
     notUnderstood: 'No entendí tu selección. Por favor elige una opción del menú.',
