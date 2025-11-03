@@ -47,9 +47,10 @@ C1: Nombre Completo
 D1: Código Estudiantil
 E1: Carrera
 F1: Email
-G1: Día Preferido
-H1: Hora Preferida
+G1: Día Preferido (o "Dia")
+H1: Hora Preferida (o "Hora")
 I1: Fecha de Registro
+J1: Fecha Calculada
 ```
 
 ### 4️⃣ **Formato Recomendado (Opcional)**

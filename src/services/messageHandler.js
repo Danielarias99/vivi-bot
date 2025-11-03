@@ -372,13 +372,34 @@ if (normalized === '4' ||
     delete this.appointmentState[to];
 
     // Calcular fecha exacta de la cita
-    const appointmentDate = appointmentReminderService.calculateAppointmentDate(
+    let appointmentDate = appointmentReminderService.calculateAppointmentDate(
       appointment.day,
       appointment.time
     );
+    
+    // Si no se pudo calcular, intentar de nuevo con normalización
+    if (!appointmentDate && appointment.day && appointment.time) {
+      console.log('⚠️ Reintentando cálculo de fecha con normalización...');
+      // Normalizar día (quitar acentos, espacios, etc.)
+      const normalizedDay = appointment.day.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+      appointmentDate = appointmentReminderService.calculateAppointmentDate(
+        normalizedDay,
+        appointment.time
+      );
+    }
+    
     const appointmentDateStr = appointmentDate 
       ? appointmentDate.toISOString() 
       : 'No calculada';
+    
+    if (!appointmentDate) {
+      console.warn(`⚠️ No se pudo calcular fecha para: ${appointment.day} ${appointment.time}`);
+    } else {
+      console.log(`✅ Fecha calculada: ${appointmentDateStr} para ${appointment.day} ${appointment.time}`);
+    }
 
     const userData = [
       to,                              // WhatsApp del usuario

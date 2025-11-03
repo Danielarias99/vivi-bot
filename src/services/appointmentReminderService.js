@@ -10,12 +10,39 @@ import messages from '../config/messages.js';
  */
 function calculateAppointmentDate(day, time) {
   try {
+    if (!day || !time) {
+      console.warn('⚠️ Día o hora no proporcionados para calcular fecha');
+      return null;
+    }
+    
     const now = new Date();
-    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const dayIndex = dayNames.findIndex(d => day.toLowerCase().includes(d));
+    // Normalizar día: quitar acentos y espacios, convertir a minúsculas
+    const normalizedDay = day.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+      .trim();
+    
+    // Días de la semana con variaciones
+    const dayNames = [
+      { names: ['domingo', 'dom'], index: 0 },
+      { names: ['lunes', 'lun'], index: 1 },
+      { names: ['martes', 'mar'], index: 2 },
+      { names: ['miercoles', 'miércoles', 'mier', 'mie'], index: 3 },
+      { names: ['jueves', 'jue'], index: 4 },
+      { names: ['viernes', 'vie'], index: 5 },
+      { names: ['sabado', 'sábado', 'sab'], index: 6 }
+    ];
+    
+    let dayIndex = -1;
+    for (const dayInfo of dayNames) {
+      if (dayInfo.names.some(name => normalizedDay.includes(name))) {
+        dayIndex = dayInfo.index;
+        break;
+      }
+    }
     
     if (dayIndex === -1) {
-      // Si no se puede determinar el día, retornar null
+      console.warn(`⚠️ No se pudo determinar el día: "${day}"`);
       return null;
     }
     
@@ -142,8 +169,15 @@ async function getPendingAppointments() {
     const whatsappIndex = headers.indexOf('WhatsApp');
     const typeIndex = headers.indexOf('Tipo de Cita');
     const nameIndex = headers.indexOf('Nombre Completo');
-    const dayIndex = headers.indexOf('Día Preferido');
-    const timeIndex = headers.indexOf('Hora Preferida');
+    // Buscar día con diferentes variaciones de nombre
+    const dayIndex = headers.findIndex(h => 
+      h && (h.toLowerCase().includes('día') || h.toLowerCase().includes('dia')) && 
+      (h.toLowerCase().includes('preferido') || !h.toLowerCase().includes('registro'))
+    );
+    // Buscar hora con diferentes variaciones
+    const timeIndex = headers.findIndex(h => 
+      h && (h.toLowerCase().includes('hora') || h.toLowerCase().includes('time'))
+    );
     const reminderSentIndex = headers.indexOf('Recordatorio Enviado');
     
     // Si no hay columna de recordatorio, asumir que no se ha enviado
