@@ -2,6 +2,7 @@ import whatsappService from './whatsappService.js';
 import appendToSheet, { readSheet, updateRowInSheet, deleteRowInSheet } from './googleSheetsService.js';
 import messages from '../config/messages.js';
 import wellbeingResources from '../config/wellbeingResources.js';
+import { preguntarAGemini } from './geminiService.js';
 
 class MessageHandler {
   async handleWorkshopFlow(to, message) {
@@ -272,15 +273,15 @@ class MessageHandler {
       return;
     }
 
-    // Opción 3: Hablar con un profesional / IA sobre emociones
+    // Opción 3: Hablar con la IA sobre tus emociones
     if (normalized === '3' || 
         normalized === 'menu_3_profesional' ||
-        matchesKeywords(normalized, ['profesional', 'hablar con un profesional', 'hablar con profesional', 'contactar profesional', 
-                                    'ia sobre emociones', 'inteligencia artificial', 'emociones', 'hablar sobre emociones', 'hablar de emociones',
-                                    'ia', 'chat', 'conversar'])) {
-      response = messages.contactProfessional;
+        matchesKeywords(normalized, ['ia sobre emociones', 'inteligencia artificial', 'emociones', 'hablar sobre emociones', 'hablar de emociones',
+                                    'ia', 'chat', 'conversar', 'hablar con la ia'])) {
+      // Iniciar el flujo de conversación con la IA
+      this.assistandState[to] = { step: 'question' };
+      response = messages.briefOrientationIntro;
       await whatsappService.sendMessage(to, response);
-      await this.sendContact(to);
       return;
     }
 
@@ -530,23 +531,55 @@ if (normalized === '4' ||
 
   async handleAssistandFlow(to, message) {
     const state = this.assistandState[to];
-    let response;
-
-    const menuMessage = messages.briefOrientationFollowup;
-    const buttons = [
-      { type: 'reply', reply: { id: 'menu_info', title: 'Ver servicios' } },
-      { type: 'reply', reply: { id: 'menu_agendar', title: 'Agendar' } },
-      { type: 'reply', reply: { id: 'menu_emergencia', title: 'Emergencia' } }
-    ];
-
+    
     if (state.step === 'question') {
-      // Respuesta breve por defecto; aquí se puede integrar un motor de FAQ
-      response = 'Gracias por compartirlo. Algunas recomendaciones iniciales: respira profundo, intenta identificar qué necesitas ahora y considera escribir tus pensamientos. Si lo deseas, puedes agendar una cita para un acompañamiento más profundo.'
+      // Usuario está compartiendo su situación emocional
+      try {
+        // Mostrar que estamos procesando
+        await whatsappService.sendMessage(to, '💭 Pensando en cómo ayudarte...');
+        
+        // Consultar a Gemini
+        const aiResponse = await preguntarAGemini(message);
+        
+        // Enviar la respuesta de la IA
+        await whatsappService.sendMessage(to, aiResponse);
+        
+        // Preguntar si necesita más ayuda o quiere volver al menú
+        await whatsappService.sendMessage(to, messages.briefOrientationFollowup + '\n\nSi necesitas más apoyo, puedes:\n- Continuar conversando conmigo\n- Escribir "menú" para ver otras opciones\n- Escribir "hola" para comenzar de nuevo');
+        
+        // Cambiar el estado para permitir continuar la conversación o volver al menú
+        state.step = 'continue';
+      } catch (error) {
+        console.error('Error consultando Gemini:', error);
+        await whatsappService.sendMessage(to, 'Lo siento, hubo un error al consultar la IA. Por favor, intenta de nuevo o escribe "hola" para volver al menú principal.');
+        delete this.assistandState[to];
+      }
+    } else if (state.step === 'continue') {
+      // El usuario puede continuar la conversación o volver al menú
+      const normalized = message.toLowerCase().trim();
+      
+      if (normalized === 'menú' || normalized === 'menu' || normalized === 'volver al menú') {
+        delete this.assistandState[to];
+        await whatsappService.sendMessage(to, messages.mainMenuText);
+      } else if (normalized === 'hola' || normalized === 'hello' || normalized === 'hi') {
+        // Reiniciar completamente
+        delete this.assistandState[to];
+        // El handleIncomingMessage manejará el saludo
+        return;
+      } else {
+        // Continuar la conversación con la IA
+        try {
+          await whatsappService.sendMessage(to, '💭 Pensando...');
+          const aiResponse = await preguntarAGemini(message);
+          await whatsappService.sendMessage(to, aiResponse);
+          await whatsappService.sendMessage(to, '\n¿Hay algo más en lo que pueda ayudarte? Escribe "menú" para ver otras opciones o "hola" para comenzar de nuevo.');
+        } catch (error) {
+          console.error('Error consultando Gemini:', error);
+          await whatsappService.sendMessage(to, 'Lo siento, hubo un error. Intenta de nuevo o escribe "hola" para volver al menú.');
+          delete this.assistandState[to];
+        }
+      }
     }
-
-    delete this.assistandState[to];
-    await whatsappService.sendMessage(to, response);
-    await whatsappService.sendInteractiveButtons(to, menuMessage, buttons);
   }
   // Colócala junto a otras funciones de flujo como handleAppointmentFlow.
   async handleResourceFlow(to, message) {
