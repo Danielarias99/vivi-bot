@@ -549,9 +549,6 @@ if (normalized === '4' ||
         // Enviar la respuesta de la IA
         await whatsappService.sendMessage(to, aiResponse);
         
-        // Enviar mensaje de seguimiento
-        await whatsappService.sendMessage(to, messages.aiSupportMessage);
-        
         // Crear botones interactivos: Sí y No
         const buttons = [
           { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
