@@ -540,47 +540,59 @@ if (normalized === '4' ||
     if (state.step === 'question') {
       // Usuario está compartiendo su situación emocional
       try {
+        console.log('🤖 Iniciando consulta con Gemini para:', to);
         // Mostrar que estamos procesando
         await whatsappService.sendMessage(to, '💭 Pensando en cómo ayudarte...');
         
         // Consultar a Gemini
         let aiResponse;
         try {
+          console.log('📤 Consultando Gemini con mensaje:', message.substring(0, 50) + '...');
           aiResponse = await preguntarAGemini(message);
+          console.log('✅ Respuesta de Gemini recibida:', aiResponse ? 'Sí' : 'No');
           if (!aiResponse || aiResponse.trim() === '') {
+            console.warn('⚠️ Respuesta vacía de Gemini');
             aiResponse = 'Lo siento, no pude generar una respuesta en este momento. Por favor, intenta reformular tu pregunta.';
           }
         } catch (geminiError) {
-          console.error('Error consultando Gemini:', geminiError);
+          console.error('❌ Error consultando Gemini:', geminiError.message || geminiError);
+          console.error('Stack:', geminiError.stack);
           aiResponse = 'Lo siento, hubo un error al consultar la IA. Por favor, intenta de nuevo más tarde.';
         }
         
         // Enviar la respuesta de la IA
+        console.log('📨 Enviando respuesta de IA al usuario');
         await whatsappService.sendMessage(to, aiResponse);
         
         // Crear botones interactivos: Sí y No
         try {
+          console.log('🔘 Preparando botones interactivos');
           const buttons = [
             { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
             { type: 'reply', reply: { id: 'ai_continue_no', title: 'No' } }
           ];
           
+          console.log('📤 Enviando botones con mensaje:', messages.briefOrientationFollowup);
           await whatsappService.sendInteractiveButtons(to, messages.briefOrientationFollowup, buttons);
           
           // Cambiar el estado para esperar respuesta Sí/No
           state.step = 'waiting_response';
+          console.log('✅ Flujo completado exitosamente');
         } catch (buttonError) {
-          console.error('Error enviando botones interactivos:', buttonError);
+          console.error('❌ Error enviando botones interactivos:', buttonError.message || buttonError);
+          console.error('Stack:', buttonError.stack);
           // Si falla enviar botones, enviar mensaje de texto como fallback
           await whatsappService.sendMessage(to, messages.briefOrientationFollowup + '\n\nResponde con "Sí" para continuar o "No" para terminar.');
           state.step = 'waiting_response';
         }
       } catch (error) {
-        console.error('Error en handleAssistandFlow:', error);
+        console.error('❌ Error general en handleAssistandFlow:', error.message || error);
+        console.error('Stack completo:', error.stack);
+        console.error('Error completo:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
         try {
           await whatsappService.sendMessage(to, 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo o escribe "hola" para volver al menú principal.');
         } catch (sendError) {
-          console.error('Error enviando mensaje de error:', sendError);
+          console.error('❌ Error enviando mensaje de error:', sendError.message || sendError);
         }
         delete this.assistandState[to];
       }
