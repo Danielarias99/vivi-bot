@@ -360,8 +360,9 @@ if (normalized === '4' ||
       await whatsappService.sendMessage(to, response);
       return;
     } else {
-      // Si no se encontró ninguna opción válida, no enviar respuesta
-      // La conversación ha terminado y solo se reinicia con "hola"
+      // Si no se encontró ninguna opción válida
+      response = messages.notUnderstood + '\n\n' + messages.mainMenuText;
+      await whatsappService.sendMessage(to, response);
       return;
     }
   }

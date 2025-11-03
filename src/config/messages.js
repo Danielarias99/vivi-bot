@@ -51,7 +51,7 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
     briefOrientationFollowup: 'Espero que esta orientación fuera de tu ayuda. ¿Necesitas hacer otra consulta?',
     
     aiFarewell: 'Entiendo. Me alegra haber podido ayudarte. 💙\n\nSi necesitas más apoyo en otro momento, escribe "hola" para comenzar de nuevo. ¡Cuídate mucho!',
-    notUnderstood: 'No entendí tu selección. Por favor elige una opción del menú.',
+    notUnderstood: 'No entendí tu selección. Por favor, elige una opción del menú usando el número (1-7) o escribiendo el nombre de la opción.',
     emergencySelected: 'Entiendo. Te comparto información prioritaria de apoyo inmediato.',
     cancelModify: {
       askAction: '¿Qué deseas hacer?\n1️⃣ Cancelar mi cita\n2️⃣ Modificar mi cita',
