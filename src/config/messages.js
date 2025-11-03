@@ -48,6 +48,8 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
 // ... (otros mensajes)
     briefOrientationIntro: 'Cuéntame brevemente qué te preocupa. Puedo darte una orientación inicial.',
     briefOrientationFollowup: '¿Esta orientación fue de ayuda?',
+    aiSupportMessage: 'Si necesitas más apoyo, puedes:\n- Continuar conversando conmigo',
+    aiFarewell: 'Entiendo. Me alegra haber podido ayudarte. 💙\n\nSi necesitas más apoyo en otro momento, escribe "hola" para comenzar de nuevo. ¡Cuídate mucho!',
     notUnderstood: 'No entendí tu selección. Por favor elige una opción del menú.',
     emergencySelected: 'Entiendo. Te comparto información prioritaria de apoyo inmediato.',
     cancelModify: {

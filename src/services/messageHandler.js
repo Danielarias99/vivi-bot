@@ -116,7 +116,12 @@ class MessageHandler {
         await whatsappService.markAsRead(message.id);
       } else if (message?.type === 'interactive') {
         const option = message?.interactive?.button_reply?.id || message?.interactive?.list_reply?.id;
-        await this.handleMenuOption(message.from, option);
+        // Si hay un estado activo de asistente, procesar en ese flujo
+        if (this.assistandState[message.from]) {
+          await this.handleAssistandFlow(message.from, option);
+        } else {
+          await this.handleMenuOption(message.from, option);
+        }
         await whatsappService.markAsRead(message.id);
       }
     } catch (error) {
@@ -544,40 +549,45 @@ if (normalized === '4' ||
         // Enviar la respuesta de la IA
         await whatsappService.sendMessage(to, aiResponse);
         
-        // Preguntar si necesita más ayuda o quiere volver al menú
-        await whatsappService.sendMessage(to, messages.briefOrientationFollowup + '\n\nSi necesitas más apoyo, puedes:\n- Continuar conversando conmigo\n- Escribir "menú" para ver otras opciones\n- Escribir "hola" para comenzar de nuevo');
+        // Enviar mensaje de seguimiento
+        await whatsappService.sendMessage(to, messages.aiSupportMessage);
         
-        // Cambiar el estado para permitir continuar la conversación o volver al menú
-        state.step = 'continue';
+        // Crear botones interactivos: Sí y No
+        const buttons = [
+          { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
+          { type: 'reply', reply: { id: 'ai_continue_no', title: 'No' } }
+        ];
+        
+        await whatsappService.sendInteractiveButtons(to, messages.briefOrientationFollowup, buttons);
+        
+        // Cambiar el estado para esperar respuesta Sí/No
+        state.step = 'waiting_response';
       } catch (error) {
         console.error('Error consultando Gemini:', error);
         await whatsappService.sendMessage(to, 'Lo siento, hubo un error al consultar la IA. Por favor, intenta de nuevo o escribe "hola" para volver al menú principal.');
         delete this.assistandState[to];
       }
-    } else if (state.step === 'continue') {
-      // El usuario puede continuar la conversación o volver al menú
+    } else if (state.step === 'waiting_response') {
+      // El usuario responde Sí o No
       const normalized = message.toLowerCase().trim();
       
-      if (normalized === 'menú' || normalized === 'menu' || normalized === 'volver al menú') {
+      if (normalized === 'sí' || normalized === 'si' || normalized === 'yes' || normalized === 'ai_continue_si') {
+        // Usuario quiere continuar
+        state.step = 'question';
+        await whatsappService.sendMessage(to, 'Perfecto. Cuéntame, ¿en qué más puedo ayudarte?');
+      } else if (normalized === 'no' || normalized === 'ai_continue_no') {
+        // Usuario no quiere continuar - terminar conversación
+        await whatsappService.sendMessage(to, messages.aiFarewell);
         delete this.assistandState[to];
-        await whatsappService.sendMessage(to, messages.mainMenuText);
-      } else if (normalized === 'hola' || normalized === 'hello' || normalized === 'hi') {
-        // Reiniciar completamente
-        delete this.assistandState[to];
-        // El handleIncomingMessage manejará el saludo
-        return;
+        this.completedConversations[to] = true; // Marcar conversación como completada
       } else {
-        // Continuar la conversación con la IA
-        try {
-          await whatsappService.sendMessage(to, '💭 Pensando...');
-          const aiResponse = await preguntarAGemini(message);
-          await whatsappService.sendMessage(to, aiResponse);
-          await whatsappService.sendMessage(to, '\n¿Hay algo más en lo que pueda ayudarte? Escribe "menú" para ver otras opciones o "hola" para comenzar de nuevo.');
-        } catch (error) {
-          console.error('Error consultando Gemini:', error);
-          await whatsappService.sendMessage(to, 'Lo siento, hubo un error. Intenta de nuevo o escribe "hola" para volver al menú.');
-          delete this.assistandState[to];
-        }
+        // Respuesta no reconocida, volver a preguntar
+        const buttons = [
+          { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
+          { type: 'reply', reply: { id: 'ai_continue_no', title: 'No' } }
+        ];
+        await whatsappService.sendMessage(to, 'Por favor, responde con "Sí" o "No".');
+        await whatsappService.sendInteractiveButtons(to, messages.briefOrientationFollowup, buttons);
       }
     }
   }
