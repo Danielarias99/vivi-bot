@@ -544,24 +544,44 @@ if (normalized === '4' ||
         await whatsappService.sendMessage(to, '💭 Pensando en cómo ayudarte...');
         
         // Consultar a Gemini
-        const aiResponse = await preguntarAGemini(message);
+        let aiResponse;
+        try {
+          aiResponse = await preguntarAGemini(message);
+          if (!aiResponse || aiResponse.trim() === '') {
+            aiResponse = 'Lo siento, no pude generar una respuesta en este momento. Por favor, intenta reformular tu pregunta.';
+          }
+        } catch (geminiError) {
+          console.error('Error consultando Gemini:', geminiError);
+          aiResponse = 'Lo siento, hubo un error al consultar la IA. Por favor, intenta de nuevo más tarde.';
+        }
         
         // Enviar la respuesta de la IA
         await whatsappService.sendMessage(to, aiResponse);
         
         // Crear botones interactivos: Sí y No
-        const buttons = [
-          { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
-          { type: 'reply', reply: { id: 'ai_continue_no', title: 'No' } }
-        ];
-        
-        await whatsappService.sendInteractiveButtons(to, messages.briefOrientationFollowup, buttons);
-        
-        // Cambiar el estado para esperar respuesta Sí/No
-        state.step = 'waiting_response';
+        try {
+          const buttons = [
+            { type: 'reply', reply: { id: 'ai_continue_si', title: 'Sí' } },
+            { type: 'reply', reply: { id: 'ai_continue_no', title: 'No' } }
+          ];
+          
+          await whatsappService.sendInteractiveButtons(to, messages.briefOrientationFollowup, buttons);
+          
+          // Cambiar el estado para esperar respuesta Sí/No
+          state.step = 'waiting_response';
+        } catch (buttonError) {
+          console.error('Error enviando botones interactivos:', buttonError);
+          // Si falla enviar botones, enviar mensaje de texto como fallback
+          await whatsappService.sendMessage(to, messages.briefOrientationFollowup + '\n\nResponde con "Sí" para continuar o "No" para terminar.');
+          state.step = 'waiting_response';
+        }
       } catch (error) {
-        console.error('Error consultando Gemini:', error);
-        await whatsappService.sendMessage(to, 'Lo siento, hubo un error al consultar la IA. Por favor, intenta de nuevo o escribe "hola" para volver al menú principal.');
+        console.error('Error en handleAssistandFlow:', error);
+        try {
+          await whatsappService.sendMessage(to, 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo o escribe "hola" para volver al menú principal.');
+        } catch (sendError) {
+          console.error('Error enviando mensaje de error:', sendError);
+        }
         delete this.assistandState[to];
       }
     } else if (state.step === 'waiting_response') {

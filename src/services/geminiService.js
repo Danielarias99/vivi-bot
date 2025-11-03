@@ -49,6 +49,12 @@ function detectLanguage(text) {
 
 export async function preguntarAGemini(userPrompt) {
   try {
+    // Verificar que la API key esté configurada
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === '') {
+      console.error('❌ GEMINI_API_KEY no está configurada');
+      throw new Error('API key de Gemini no configurada');
+    }
+    
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     // Detectar idioma
@@ -132,6 +138,7 @@ kindly respond that you can only assist with those areas.`;
       : 'Lo siento, no pude generar una respuesta 😢.');
   } catch (error) {
     console.error('Error con la API de Gemini:', error.response?.data || error.message);
+    const isEnglish = detectLanguage(userPrompt || '');
     return isEnglish
       ? 'There was an error consulting the AI 🤖. Please try again later.'
       : 'Hubo un error al consultar la IA 🤖. Intenta más tarde.';
