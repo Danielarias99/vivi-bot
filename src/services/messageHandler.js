@@ -865,7 +865,7 @@ if (normalized === '4' ||
       case 'newDay': {
         const text = message.trim();
         const lower = text.toLowerCase();
-        const dias = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 'sabado', 'sábado', 'domingo'];
+        const dias = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes'];
         const tieneDia = dias.some(d => lower.includes(d));
         
         if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
