@@ -735,107 +735,23 @@ if (normalized === '4' ||
         const lower = message.toLowerCase().trim();
         if (lower === '1' || lower.includes('cancelar')) {
           state.action = 'cancel';
-          state.step = 'email';
-          response = messages.cancelModify.askEmail;
-        } else if (lower === '2' || lower.includes('modificar')) {
-          state.action = 'modify';
-          state.step = 'email';
-          response = messages.cancelModify.askEmail;
-        } else {
-          response = 'Por favor, responde con "1" para Cancelar o "2" para Modificar.';
-        }
-        break;
-      }
-      case 'email': {
-        const emailTrimmed = message.trim().toLowerCase();
-        const emailRegex = /^[\w-.]+@correounivalle\.edu\.co$/;
-        if (!emailRegex.test(emailTrimmed)) {
-          response = 'Por favor, ingresa tu correo institucional válido (termina en @correounivalle.edu.co).';
-        } else {
-          state.email = message.trim();
-          state.step = 'name';
-          response = messages.cancelModify.askName;
-        }
-        break;
-      }
-      case 'name': {
-        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
-        if (!nameRegex.test(message.trim())) {
-          response = 'Por favor, ingresa solo letras para tu nombre.';
-        } else {
-          state.name = message.trim();
           state.step = 'searching';
           response = messages.cancelModify.searching;
-          // Buscar la cita de forma asíncrona
-          await whatsappService.sendMessage(to, response);
           
-          // TODO: Google Sheets - Desactivado temporalmente
-          // Cuando esté configurado, descomentar esto:
-          try {
-            // const rows = await readSheet('citas');
-            // Simular que no hay citas encontradas (Google Sheets no configurado)
-            const rows = [];
-            // Estructura esperada: [telefono, type, name, studentCode, career, phone, email, availability, timestamp]
-            const matchingRows = rows.filter((row, index) => {
-              if (index === 0) return false; // Saltar encabezado si existe
-              const rowEmail = (row[6] || '').toLowerCase().trim();
-              const rowName = (row[2] || '').toLowerCase().trim();
-              return rowEmail === state.email.toLowerCase() && 
-                     rowName === state.name.toLowerCase();
-            });
-
-            if (matchingRows.length === 0) {
-              // Como Google Sheets está desactivado, siempre mostrará esto
-              response = '⚠️ Google Sheets no está configurado aún. La funcionalidad de cancelar/modificar citas estará disponible cuando se configure.\n\nPor favor, escribe "hola" para volver al menú principal.';
-              delete this.cancelModifyState[to];
-            } else if (matchingRows.length === 1) {
-              // Encontramos una sola cita
-              const row = matchingRows[0];
-              const rowIndex = rows.findIndex(r => r === row);
-              // rowIndex es 0-based, pero necesitamos considerar si hay encabezado
-              // Si la primera fila parece ser encabezado (no tiene email válido), empezamos desde 1
-              const hasHeader = rows.length > 0 && (!rows[0][6] || !rows[0][6].includes('@'));
-              const sheetRowIndex = hasHeader ? rowIndex : rowIndex; // Índice en el sheet (0-based para nuestra función)
-              
-              state.foundAppointment = {
-                rowIndex: sheetRowIndex,
-                type: row[1] || 'N/A',
-                name: row[2] || 'N/A',
-                studentCode: row[3] || 'N/A',
-                career: row[4] || 'N/A',
-                phone: row[5] || 'N/A',
-                email: row[6] || 'N/A',
-                availability: row[7] || 'N/A',
-                timestamp: row[8] || 'N/A',
-                fullRow: row
-              };
-              state.step = 'confirm';
-              response = messages.cancelModify.foundAppointment(state.foundAppointment);
-            } else {
-              // Múltiples citas encontradas
-              response = messages.cancelModify.multipleFound;
-              // Por ahora, tomamos la primera
-              const row = matchingRows[0];
-              const rowIndex = rows.findIndex(r => r === row);
-              const hasHeader = rows.length > 0 && (!rows[0][6] || !rows[0][6].includes('@'));
-              const sheetRowIndex = hasHeader ? rowIndex : rowIndex;
-              
-              state.foundAppointment = {
-                rowIndex: sheetRowIndex,
-                type: row[1] || 'N/A',
-                name: row[2] || 'N/A',
-                email: row[6] || 'N/A',
-                availability: row[7] || 'N/A',
-                fullRow: row
-              };
-              state.step = 'confirm';
-            }
-          } catch (error) {
-        response = '⚠️ Google Sheets no está configurado aún. La funcionalidad de cancelar/modificar citas estará disponible cuando se configure.\n\nPor favor, escribe "hola" para volver al menú principal.';
-        delete this.cancelModifyState[to];
-      }
+          // Buscar la cita inmediatamente usando el WhatsApp
           await whatsappService.sendMessage(to, response);
+          await this.searchAndProcessAppointment(to, state);
           return;
+        } else if (lower === '2' || lower.includes('modificar')) {
+          state.action = 'modify';
+          state.step = 'searching';
+          response = messages.cancelModify.searching;
+          
+          await whatsappService.sendMessage(to, response);
+          await this.searchAndProcessAppointment(to, state);
+          return;
+        } else {
+          response = 'Por favor, responde con "1" para Cancelar o "2" para Modificar.';
         }
         break;
       }
@@ -844,26 +760,23 @@ if (normalized === '4' ||
         if (lower === 'sí' || lower === 'si' || lower === 'yes') {
           if (state.action === 'cancel') {
             // Cancelar cita
-            // TODO: Google Sheets - Desactivado temporalmente
-            // Cuando esté configurado, descomentar esto:
-            // try {
-            //   const result = await deleteRowInSheet(state.foundAppointment.rowIndex, 'citas');
-            //   response = messages.cancelModify.confirmCancel;
-            //   await whatsappService.sendMessage(to, response);
-            //   await whatsappService.sendInteractiveButtons(to, messages.cancelModify.endChatButton);
-            //   delete this.cancelModifyState[to];
-            //   return;
-            // } catch (error) {
-            //   console.error('Error cancelando cita:', error);
-            //   response = 'Hubo un error al cancelar tu cita. Por favor intenta más tarde.';
-            //   delete this.cancelModifyState[to];
-            // }
-            
-            // Temporalmente: informar que Google Sheets no está configurado
-            response = '⚠️ La funcionalidad de cancelar citas estará disponible cuando se configure Google Sheets.\n\nPor ahora, por favor contacta directamente al área de psicología para cancelar tu cita.\n\nEscribe "hola" para volver al menú principal.';
-            await whatsappService.sendMessage(to, response);
-            delete this.cancelModifyState[to];
-            return;
+            try {
+              const { deleteRowInSheet } = await import('./googleSheetsService.js');
+              console.log(`🗑️ Cancelando cita en fila ${state.foundAppointment.rowIndex}`);
+              await deleteRowInSheet(state.foundAppointment.rowIndex, 'citas');
+              
+              response = messages.cancelModify.confirmCancel;
+              await whatsappService.sendMessage(to, response);
+              
+              // Marcar conversación como completada
+              this.completedConversations[to] = true;
+              delete this.cancelModifyState[to];
+              return;
+            } catch (error) {
+              console.error('❌ Error cancelando cita:', error);
+              response = 'Hubo un error al cancelar tu cita. Por favor intenta más tarde.';
+              delete this.cancelModifyState[to];
+            }
           } else {
             // Modificar cita
             state.step = 'modifyField';
@@ -883,16 +796,12 @@ if (normalized === '4' ||
           state.modifyField = 'type';
           state.step = 'newType';
           response = messages.cancelModify.askNewType;
-        } else if (lower === '2' || lower.includes('fecha') || lower.includes('hora')) {
-          state.modifyField = 'availability';
-          state.step = 'newAvailability';
-          response = messages.cancelModify.askNewAvailability;
-        } else if (lower === '3' || lower.includes('teléfono') || lower.includes('telefono')) {
-          state.modifyField = 'phone';
-          state.step = 'newPhone';
-          response = messages.cancelModify.askNewPhone;
+        } else if (lower === '2' || lower.includes('día') || lower.includes('dia') || lower.includes('hora')) {
+          state.modifyField = 'dayTime';
+          state.step = 'newDay';
+          response = messages.cancelModify.askNewDay;
         } else {
-          response = 'Por favor, elige 1, 2 o 3.';
+          response = 'Por favor, elige 1 o 2.';
         }
         break;
       }
@@ -910,30 +819,33 @@ if (normalized === '4' ||
         await this.completeModification(to, state);
         return;
       }
-      case 'newAvailability': {
+      case 'newDay': {
         const text = message.trim();
         const lower = text.toLowerCase();
         const dias = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 'sabado', 'sábado', 'domingo'];
         const tieneDia = dias.some(d => lower.includes(d));
-        const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
-        const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s?(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
-        const tieneHora = re24h.test(lower) || re12h.test(lower);
-
-        if (!tieneDia || !tieneHora) {
-          response = 'Por favor indica un día de la semana y una hora válida. Ejemplos: "martes 10:30 a.m." o "viernes 14:00"';
+        
+        if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
+          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", etc.\n\nO escribe "cualquier día".';
         } else {
-          state.newValue = text;
-          await this.completeModification(to, state);
-          return;
+          state.newDay = text;
+          state.step = 'newTime';
+          response = messages.cancelModify.askNewTime;
         }
         break;
       }
-      case 'newPhone': {
-        const phone = message.replace(/\D/g, '');
-        if (phone.length !== 10) {
-          response = 'Por favor, ingresa un número de celular válido de 10 dígitos.';
+      case 'newTime': {
+        const text = message.trim();
+        const lower = text.toLowerCase();
+        const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
+        const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s?(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
+        const tieneHora = re24h.test(lower) || re12h.test(lower) || 
+                          lower === 'cualquier hora';
+
+        if (!tieneHora) {
+          response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora".';
         } else {
-          state.newValue = phone;
+          state.newTime = text;
           await this.completeModification(to, state);
           return;
         }
@@ -945,38 +857,118 @@ if (normalized === '4' ||
     if (response) await whatsappService.sendMessage(to, response);
   }
 
+  async searchAndProcessAppointment(to, state) {
+    try {
+      const { readSheet } = await import('./googleSheetsService.js');
+      const rows = await readSheet('citas');
+      
+      console.log(`🔍 Buscando cita para WhatsApp: ${to}`);
+      console.log(`📊 Total de filas en la hoja: ${rows.length}`);
+      
+      // Estructura actual: [WhatsApp, Tipo, Nombre, Código, Carrera, Email, Día, Hora, Timestamp]
+      const matchingRows = rows.filter((row, index) => {
+        if (index === 0) return false; // Saltar encabezado
+        const rowWhatsApp = (row[0] || '').trim();
+        return rowWhatsApp === to; // Buscar por WhatsApp del usuario
+      });
+
+      console.log(`✅ Citas encontradas: ${matchingRows.length}`);
+
+      let response;
+      if (matchingRows.length === 0) {
+        response = messages.cancelModify.notFound;
+        delete this.cancelModifyState[to];
+      } else if (matchingRows.length === 1) {
+        const row = matchingRows[0];
+        const rowIndex = rows.findIndex(r => r === row);
+        
+        state.foundAppointment = {
+          rowIndex: rowIndex,
+          whatsapp: row[0] || 'N/A',
+          type: row[1] || 'N/A',
+          name: row[2] || 'N/A',
+          studentCode: row[3] || 'N/A',
+          career: row[4] || 'N/A',
+          email: row[5] || 'N/A',
+          day: row[6] || 'N/A',
+          time: row[7] || 'N/A',
+          timestamp: row[8] || 'N/A',
+          fullRow: row,
+          action: state.action // Importante: pasar la acción (cancel/modify) para el mensaje
+        };
+        state.step = 'confirm';
+        response = messages.cancelModify.foundAppointment(state.foundAppointment);
+        console.log(`📋 Cita encontrada en fila ${rowIndex}`);
+      } else {
+        // Múltiples citas - mostrar la más reciente
+        const mostRecent = matchingRows[matchingRows.length - 1];
+        const rowIndex = rows.findIndex(r => r === mostRecent);
+        
+        state.foundAppointment = {
+          rowIndex: rowIndex,
+          whatsapp: mostRecent[0] || 'N/A',
+          type: mostRecent[1] || 'N/A',
+          name: mostRecent[2] || 'N/A',
+          studentCode: mostRecent[3] || 'N/A',
+          career: mostRecent[4] || 'N/A',
+          email: mostRecent[5] || 'N/A',
+          day: mostRecent[6] || 'N/A',
+          time: mostRecent[7] || 'N/A',
+          timestamp: mostRecent[8] || 'N/A',
+          fullRow: mostRecent,
+          action: state.action
+        };
+        state.step = 'confirm';
+        response = `📌 Encontré ${matchingRows.length} citas. Te muestro la más reciente:\n\n` + 
+                   messages.cancelModify.foundAppointment(state.foundAppointment);
+        console.log(`📋 Múltiples citas encontradas, mostrando la más reciente (fila ${rowIndex})`);
+      }
+      
+      await whatsappService.sendMessage(to, response);
+    } catch (error) {
+      console.error('❌ Error buscando cita:', error);
+      const response = '⚠️ Hubo un error al buscar tu cita. Por favor intenta más tarde o escribe "hola" para volver al menú.';
+      await whatsappService.sendMessage(to, response);
+      delete this.cancelModifyState[to];
+    }
+  }
+
   async completeModification(to, state) {
-    // TODO: Google Sheets - Desactivado temporalmente
-    // Cuando esté configurado, descomentar esto:
-    // try {
-    //   const appointment = state.foundAppointment;
-    //   const fullRow = [...appointment.fullRow];
-    //   
-    //   // Actualizar el campo correspondiente
-    //   if (state.modifyField === 'type') {
-    //     fullRow[1] = state.newValue;
-    //   } else if (state.modifyField === 'availability') {
-    //     fullRow[7] = state.newValue;
-    //   } else if (state.modifyField === 'phone') {
-    //     fullRow[5] = state.newValue;
-    //   }
-    // 
-    //   await updateRowInSheet(appointment.rowIndex, fullRow, 'citas');
-    //   
-    //   const response = messages.cancelModify.modifySuccess;
-    //   await whatsappService.sendMessage(to, response);
-    //   await whatsappService.sendInteractiveButtons(to, messages.cancelModify.endChatButton);
-    //   delete this.cancelModifyState[to];
-    // } catch (error) {
-    //   console.error('Error modificando cita:', error);
-    //   await whatsappService.sendMessage(to, 'Hubo un error al modificar tu cita. Por favor intenta más tarde.');
-    //   delete this.cancelModifyState[to];
-    // }
-    
-    // Temporalmente: informar que Google Sheets no está configurado
-    const response = '⚠️ La funcionalidad de modificar citas estará disponible cuando se configure Google Sheets.\n\nPor ahora, por favor contacta directamente al área de psicología para modificar tu cita.\n\nEscribe "hola" para volver al menú principal.';
-    await whatsappService.sendMessage(to, response);
-    delete this.cancelModifyState[to];
+    try {
+      const { updateRowInSheet } = await import('./googleSheetsService.js');
+      const appointment = state.foundAppointment;
+      
+      console.log(`✏️ Modificando cita en fila ${appointment.rowIndex}`);
+      console.log(`📝 Campo a modificar: ${state.modifyField}`);
+      
+      // Construir la fila actualizada
+      let updatedRow = [...appointment.fullRow];
+      
+      if (state.modifyField === 'type') {
+        updatedRow[1] = state.newValue; // Columna B: Tipo
+        console.log(`🔄 Nuevo tipo: ${state.newValue}`);
+      } else if (state.modifyField === 'dayTime') {
+        updatedRow[6] = state.newDay;  // Columna G: Día
+        updatedRow[7] = state.newTime; // Columna H: Hora
+        console.log(`🔄 Nuevo día: ${state.newDay}, Nueva hora: ${state.newTime}`);
+      }
+      
+      await updateRowInSheet(appointment.rowIndex, updatedRow, 'citas');
+      
+      const response = messages.cancelModify.modifySuccess;
+      await whatsappService.sendMessage(to, response);
+      
+      // Marcar conversación como completada
+      this.completedConversations[to] = true;
+      delete this.cancelModifyState[to];
+      
+      console.log(`✅ Cita modificada exitosamente`);
+    } catch (error) {
+      console.error('❌ Error modificando cita:', error);
+      const response = 'Hubo un error al modificar tu cita. Por favor intenta más tarde.';
+      await whatsappService.sendMessage(to, response);
+      delete this.cancelModifyState[to];
+    }
   }
 
  async sendLocation(to) {

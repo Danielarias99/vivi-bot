@@ -3,6 +3,9 @@ import { google } from 'googleapis';
 
 const sheets = google.sheets('v4');
 
+// ID único del documento de Google Sheets (unificado para todas las operaciones)
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID || '1b52e3kbbhD5Gp1d88pEeIeRnVn0b6KKgAoArxBHVjkA';
+
 async function addRowToSheet(auth, spreadsheetId, rangeName, values) {
     const request = {
         spreadsheetId,
@@ -63,7 +66,7 @@ const appendToSheet = async (data, rangeName = 'reservas') => {
     try {
         console.log(`🔐 Autenticando con Google Sheets...`);
         const authClient = await getAuth();
-        const spreadsheetId = '1b52e3kbbhD5Gp1d88pEeIeRnVn0b6KKgAoArxBHVjkA'
+        const spreadsheetId = SPREADSHEET_ID;
         
         console.log(`📝 Guardando datos en hoja: "${rangeName}"`);
         console.log(`📊 Datos a guardar:`, data);
@@ -93,8 +96,9 @@ const appendToSheet = async (data, rangeName = 'reservas') => {
 
 const readSheet = async (rangeName = 'reservas') => {
     try {
+        console.log(`📖 Leyendo datos de la hoja: "${rangeName}"`);
         const authClient = await getAuth();
-        const spreadsheetId = '1qt4Adt_muJZf1LXlXjqRUcs5hDf6Zac1wzGiwHeH_Ns';
+        const spreadsheetId = SPREADSHEET_ID;
         
         const response = await sheets.spreadsheets.values.get({
             auth: authClient,
@@ -102,6 +106,7 @@ const readSheet = async (rangeName = 'reservas') => {
             range: rangeName,
         });
 
+        console.log(`✅ Datos leídos correctamente: ${response.data.values?.length || 0} filas`);
         return response.data.values || [];
     } catch (error) {
         const errorMessage = error?.message || error?.error_description || 'Error desconocido';
@@ -119,8 +124,9 @@ const readSheet = async (rangeName = 'reservas') => {
 
 const updateRowInSheet = async (rowIndex, data, rangeName = 'reservas') => {
     try {
+        console.log(`✏️ Actualizando fila ${rowIndex} en hoja: "${rangeName}"`);
         const authClient = await getAuth();
-        const spreadsheetId = '1qt4Adt_muJZf1LXlXjqRUcs5hDf6Zac1wzGiwHeH_Ns';
+        const spreadsheetId = SPREADSHEET_ID;
         
         // Convertir el índice a formato A1 (rowIndex + 1 porque Sheets es 1-indexed)
         const range = `${rangeName}!A${rowIndex + 1}:Z${rowIndex + 1}`;
@@ -135,6 +141,7 @@ const updateRowInSheet = async (rowIndex, data, rangeName = 'reservas') => {
             }
         });
         
+        console.log(`✅ Fila actualizada correctamente`);
         return 'Fila actualizada correctamente';
     } catch (error) {
         const errorMessage = error?.message || error?.error_description || 'Error desconocido';
@@ -152,8 +159,9 @@ const updateRowInSheet = async (rowIndex, data, rangeName = 'reservas') => {
 
 const deleteRowInSheet = async (rowIndex, rangeName = 'reservas') => {
     try {
+        console.log(`🗑️ Eliminando fila ${rowIndex} de la hoja: "${rangeName}"`);
         const authClient = await getAuth();
-        const spreadsheetId = '1qt4Adt_muJZf1LXlXjqRUcs5hDf6Zac1wzGiwHeH_Ns';
+        const spreadsheetId = SPREADSHEET_ID;
         
         // Obtener el sheetId de la hoja por nombre
         const spreadsheet = await sheets.spreadsheets.get({
@@ -187,6 +195,7 @@ const deleteRowInSheet = async (rowIndex, rangeName = 'reservas') => {
             }
         });
         
+        console.log(`✅ Fila eliminada correctamente`);
         return 'Fila eliminada correctamente';
     } catch (error) {
         const errorMessage = error?.message || error?.error_description || 'Error desconocido';

@@ -52,17 +52,21 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
     emergencySelected: 'Entiendo. Te comparto información prioritaria de apoyo inmediato.',
     cancelModify: {
       askAction: '¿Qué deseas hacer?\n1️⃣ Cancelar mi cita\n2️⃣ Modificar mi cita',
-      askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co) para buscar tu cita:',
-      askName: 'Ahora ingresa tu nombre completo (tal como lo registraste):',
-      searching: 'Buscando tu cita...',
-      notFound: 'No encontré ninguna cita con los datos proporcionados. Por favor verifica:\n- Tu correo institucional\n- Tu nombre completo\n\nSi necesitas ayuda, puedes escribir "hola" para volver al menú principal.',
-      multipleFound: 'Encontré varias citas. Por favor, proporciona más información para identificar tu cita.',
-      foundAppointment: (data) => `Encontré tu cita:\n\nTipo: ${data.type}\nNombre: ${data.name}\nFecha/Hora: ${data.availability}\nEmail: ${data.email}\n\n¿Esta es tu cita? Responde SI para continuar o NO para buscar otra.`,
-      confirmCancel: '✅ Tu cita ha sido cancelada exitosamente. Te enviaremos una confirmación por correo.\n\n¡Gracias por avisarnos! Si necesitas algo más, escribe "hola" para comenzar de nuevo.',
-      askModifyField: '¿Qué deseas modificar?\n1️⃣ Tipo de cita (presencial/virtual)\n2️⃣ Fecha y hora\n3️⃣ Teléfono',
+      searching: '🔍 Buscando tu cita...',
+      notFound: 'No encontré ninguna cita agendada con tu número de WhatsApp.\n\nSi necesitas ayuda, puedes escribir "hola" para volver al menú principal.',
+      foundAppointment: (data) => `📋 Encontré tu cita:\n\n` +
+        `📍 Tipo: ${data.type}\n` +
+        `👤 Nombre: ${data.name}\n` +
+        `📅 Día: ${data.day}\n` +
+        `🕐 Hora: ${data.time}\n` +
+        `📧 Email: ${data.email}\n\n` +
+        `¿Esta es la cita que deseas ${data.action === 'cancel' ? 'cancelar' : 'modificar'}?\n\n` +
+        `Responde SI para continuar o NO para cancelar.`,
+      confirmCancel: '✅ Tu cita ha sido cancelada exitosamente.\n\n¡Gracias por avisarnos! Si necesitas algo más, escribe "hola" para comenzar de nuevo.',
+      askModifyField: '¿Qué deseas modificar?\n1️⃣ Tipo de cita (presencial/virtual)\n2️⃣ Día y hora',
       askNewType: '¿Qué tipo de cita prefieres?\n1. Presencial\n2. Virtual',
-      askNewAvailability: 'Indica la nueva fecha y horario preferidos (ej: martes 10:30 a.m.):',
-      askNewPhone: 'Ingresa tu nuevo número de teléfono (10 dígitos):',
+      askNewDay: '¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
+      askNewTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
       modifySuccess: '✅ Tu cita ha sido modificada exitosamente. Te enviaremos una confirmación con los nuevos datos por correo.\n\n¡Gracias! Si necesitas algo más, escribe "hola" para comenzar de nuevo.',
     },
   };
