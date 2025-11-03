@@ -1,7 +1,7 @@
 
   const messages = {
     welcome: (name) => `👋 ¡Hola ${name}! Soy Vivi, asistente virtual del área de psicología de la Universidad del Valle.\nEstoy aquí para ayudarte a cuidar tu bienestar emocional 💙`,
-    mainMenuText: 'Por favor, elige una opción:\n1️⃣ Agendar una cita\n2️⃣ Ver talleres disponibles\n3️⃣ Hablar con la IA sobre tus emociones\n4️⃣ Recursos de bienestar\n5️⃣ Cancelar o modificar una cita\n6️⃣ Contacto de emergencia\n7️⃣ Ubicación en tiempo real',
+    mainMenuText: 'Por favor, elige una opción:\n1️⃣ Agendar una cita\n2️⃣ Ver talleres disponibles\n3️⃣ Hablar con la IA sobre tus emociones\n4️⃣ Recursos de bienestar\n5️⃣ Cancelar o modificar una cita\n6️⃣ Contacto de emergencia\n7️⃣ Ubicación en tiempo real\n8️⃣ ❌ Ya no necesito nada',
     optOutConfirmed: 'Has sido dado de baja. No recibirás más mensajes. Escribe HOLA para reactivar.',
     crisisDetected: 'Percibo que podrías estar pasando por una situación de alto riesgo. Tu bienestar es lo más importante.',
     crisisResources: 'Si estás en peligro o piensas hacerte daño, por favor busca ayuda inmediata:\n- Línea Nacional 24/7: 106 (Colombia)\n- Línea 123 (emergencias)\n- Acude a urgencias más cercana.\n¿Deseas que un profesional te contacte? Responde SI para que gestionemos un apoyo prioritario.',
@@ -51,7 +51,8 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
     briefOrientationFollowup: 'Espero que esta orientación fuera de tu ayuda. ¿Necesitas hacer otra consulta?',
     
     aiFarewell: 'Entiendo. Me alegra haber podido ayudarte. 💙\n\nSi necesitas más apoyo en otro momento, escribe "hola" para comenzar de nuevo. ¡Cuídate mucho!',
-    notUnderstood: 'No entendí tu selección. Por favor, elige una opción del menú usando el número (1-7) o escribiendo el nombre de la opción.',
+    goodbye: 'Entendido. Gracias por contactarnos. Si necesitas algo más en el futuro, solo escribe "hola" y estaré aquí para ayudarte. ¡Cuídate mucho! 💙',
+    notUnderstood: 'No entendí tu selección. Por favor, elige una opción del menú usando el número (1-8) o escribiendo el nombre de la opción.',
     emergencySelected: 'Entiendo. Te comparto información prioritaria de apoyo inmediato.',
     cancelModify: {
       askAction: '¿Qué deseas hacer?\n1️⃣ Cancelar mi cita\n2️⃣ Modificar mi cita',

@@ -345,6 +345,27 @@ if (normalized === '4' ||
       return;
     }
 
+    // Opción 8: Ya no necesito nada / Finalizar conversación
+    if (normalized === '8' ||
+        matchesKeywords(normalized, ['ya no necesito', 'no necesito nada', 'no necesito hacer consulta', 'finalizar', 
+                                    'terminar', 'cerrar', 'salir', 'adiós', 'adios', 'hasta luego', 'chao'])) {
+      // Limpiar todos los estados
+      delete this.appointmentState[to];
+      if (this.workshopState) delete this.workshopState[to];
+      delete this.assistandState[to];
+      delete this.cancelModifyState[to];
+      delete this.emergencyResponseState[to];
+      if (this.resourceState) delete this.resourceState[to];
+      
+      // Marcar conversación como completada
+      this.completedConversations[to] = true;
+      
+      // Enviar mensaje de despedida
+      response = messages.goodbye;
+      await whatsappService.sendMessage(to, response);
+      return;
+    }
+
     
 
     // fallback: mantener compatibilidad con opciones antiguas
