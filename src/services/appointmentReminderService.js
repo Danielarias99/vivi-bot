@@ -196,24 +196,38 @@ async function getPendingAppointments() {
       const whatsapp = row[whatsappIndex] || '';
       const type = row[typeIndex] || '';
       const name = row[nameIndex] || '';
-      const day = row[dayIndex] || '';
-      const time = row[timeIndex] || '';
+      const day = row[dayIndex] || ''; // Formato legible (ej: "lunes 10 de noviembre")
+      const time = row[timeIndex] || ''; // Formato legible (ej: "9:00 AM")
       
-      if (!whatsapp || !day || !time) {
+      // 🆕 Leer fecha ISO directamente de la columna 9 (Fecha de Cita calculada)
+      const appointmentDateStr = row[9] || ''; // Columna "Fecha de Cita (ISO)"
+      const calendarEventId = row[10] || ''; // Columna "Calendar Event ID"
+      
+      if (!whatsapp || !appointmentDateStr) {
+        console.warn(`⚠️ Fila ${i + 1}: Falta WhatsApp o fecha de cita`);
         continue; // Datos incompletos, saltar
       }
       
-      // Calcular fecha de la cita
-      const appointmentDate = calculateAppointmentDate(day, time);
+      // 🆕 Usar fecha ISO directamente (más confiable que parsear texto)
+      const appointmentDate = new Date(appointmentDateStr);
+      
+      // Validar que la fecha sea válida
+      if (isNaN(appointmentDate.getTime())) {
+        console.warn(`⚠️ Fecha inválida en fila ${i + 1}: ${appointmentDateStr}`);
+        continue;
+      }
+      
+      console.log(`📋 Fila ${i + 1}: ${name} - Cita el ${appointmentDate.toLocaleDateString('es-CO')} (${day} ${time})`);
       
       if (needsReminder(appointmentDate)) {
         appointments.push({
           whatsapp,
           type,
           name,
-          day,
-          time,
+          day, // Formato legible para el mensaje
+          time, // Formato legible para el mensaje
           appointmentDate,
+          calendarEventId,
           rowIndex: i + 1 // +1 porque Google Sheets es 1-indexed
         });
       }
@@ -314,18 +328,24 @@ async function markReminderSent(rowIndex) {
 async function sendAppointmentReminders() {
   try {
     console.log('🔔 Verificando recordatorios de citas...');
+    console.log(`📅 Fecha actual: ${new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`);
     
     const appointments = await getPendingAppointments();
     
     if (appointments.length === 0) {
-      console.log('✅ No hay citas que requieran recordatorio');
+      console.log('✅ No hay citas que requieran recordatorio (para mañana)');
       return;
     }
     
-    console.log(`📋 Encontradas ${appointments.length} cita(s) que requieren recordatorio`);
+    console.log(`📋 Encontradas ${appointments.length} cita(s) que requieren recordatorio para mañana:`);
     
     for (const appointment of appointments) {
       try {
+        console.log(`\n📤 Enviando recordatorio a: ${appointment.name}`);
+        console.log(`   WhatsApp: ${appointment.whatsapp}`);
+        console.log(`   Cita: ${appointment.day} a las ${appointment.time}`);
+        console.log(`   Fecha exacta: ${appointment.appointmentDate.toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`);
+        
         // Enviar recordatorio
         await whatsappService.sendMessage(
           appointment.whatsapp,
@@ -337,10 +357,11 @@ async function sendAppointmentReminders() {
           })
         );
         
-        console.log(`✅ Recordatorio enviado a ${appointment.name} (${appointment.whatsapp})`);
+        console.log(`✅ Recordatorio enviado exitosamente a ${appointment.name}`);
         
         // Marcar como enviado en Google Sheets
         await markReminderSent(appointment.rowIndex);
+        console.log(`✅ Marcado como enviado en Sheets (fila ${appointment.rowIndex})`);
         
         // Esperar un poco entre mensajes para no exceder límites de rate
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -350,7 +371,7 @@ async function sendAppointmentReminders() {
       }
     }
     
-    console.log('✅ Proceso de recordatorios completado');
+    console.log('\n✅ Proceso de recordatorios completado');
   } catch (error) {
     console.error('❌ Error en sendAppointmentReminders:', error.message || error);
   }

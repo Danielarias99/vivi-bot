@@ -547,6 +547,37 @@ export const updateCalendarEvent = async (eventId, updates) => {
     }
 };
 
+/**
+ * Get a specific calendar event by ID
+ * @param {string} eventId - Google Calendar event ID
+ * @returns {Object|null} - Event data or null if not found
+ */
+export const getCalendarEvent = async (eventId) => {
+    try {
+        console.log(`📅 Obteniendo evento de Calendar: ${eventId}`);
+        const authClient = await getAuth();
+        
+        const response = await calendar.events.get({
+            auth: authClient,
+            calendarId: CALENDAR_ID,
+            eventId: eventId,
+        });
+        
+        console.log(`✅ Evento encontrado: ${response.data.summary}`);
+        console.log(`   Inicio: ${response.data.start.dateTime}`);
+        console.log(`   Fin: ${response.data.end.dateTime}`);
+        
+        return response.data;
+    } catch (error) {
+        if (error.code === 404) {
+            console.warn(`⚠️ Evento no encontrado en Calendar: ${eventId}`);
+        } else {
+            console.error('❌ Error obteniendo evento de Calendar:', error?.message || error);
+        }
+        return null;
+    }
+};
+
 export default {
     checkAvailability,
     getAvailableSlots,
@@ -554,6 +585,7 @@ export default {
     getAvailableTimesForDate,
     createCalendarEvent,
     deleteCalendarEvent,
-    updateCalendarEvent
+    updateCalendarEvent,
+    getCalendarEvent
 };
 
