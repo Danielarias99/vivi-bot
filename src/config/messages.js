@@ -1,7 +1,7 @@
 
   const messages = {
     welcome: (name) => `👋 ¡Hola ${name}! Soy Vivi, asistente virtual del área de psicología de la Universidad del Valle.\nEstoy aquí para ayudarte a cuidar tu bienestar emocional 💙`,
-    mainMenuText: 'Por favor, elige una opción:\n1️⃣ Agendar una cita\n2️⃣ Ver talleres disponibles\n3️⃣ Hablar con la IA sobre tus emociones\n4️⃣ Recursos de bienestar\n5️⃣ Cancelar o modificar una cita\n6️⃣ Contacto de emergencia\n7️⃣ Ubicación en tiempo real\n8️⃣ ❌ Ya no necesito nada',
+    mainMenuText: 'Por favor, elige una opción:\n1️⃣ Agendar una cita\n2️⃣ Ver talleres disponibles\n3️⃣ Hablar con la IA sobre tus emociones\n4️⃣ Recursos de bienestar\n5️⃣ Cancelar o modificar una cita\n6️⃣ Contacto de emergencia\n7️⃣ Ubicación en tiempo real\n8️⃣ Haré mi consulta en otro momento',
     optOutConfirmed: 'Has sido dado de baja. No recibirás más mensajes. Escribe HOLA para reactivar.',
     crisisDetected: 'Percibo que podrías estar pasando por una situación de alto riesgo. Tu bienestar es lo más importante.',
     crisisResources: 'Si estás en peligro o piensas hacerte daño, por favor busca ayuda inmediata:\n- Línea Nacional 24/7: 106 (Colombia)\n- Línea 123 (emergencias)\n- Acude a urgencias más cercana.\n¿Deseas que un profesional te contacte? Responde SI para que gestionemos un apoyo prioritario.',
@@ -14,7 +14,7 @@
       askCareer: '¿Cuál es tu programa o carrera?',
       askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co):',
       askDay: (dates) => {
-        let message = '📅 ¿Qué día prefieres para tu cita?\n\n';
+        let message = '¿Qué día prefieres para tu cita?\n\n';
         
         // Separate dates by week
         const week1 = dates.filter(d => d.weekNumber === 1);
@@ -22,10 +22,18 @@
         
         let counter = 1;
         
+        // Helper function to format number with emoji
+        const formatNumber = (num) => {
+          if (num === 10) {
+            return '1️⃣0️⃣'; // Special case for 10
+          }
+          return `${num}️⃣`;
+        };
+        
         if (week1.length > 0) {
           message += '📆 ESTA SEMANA:\n';
           week1.forEach(date => {
-            message += `${counter}️⃣ ${date.formatted}\n`;
+            message += `${formatNumber(counter)} ${date.formatted}\n`;
             counter++;
           });
           message += '\n';
@@ -34,7 +42,7 @@
         if (week2.length > 0) {
           message += '📆 PRÓXIMA SEMANA:\n';
           week2.forEach(date => {
-            message += `${counter}️⃣ ${date.formatted}\n`;
+            message += `${formatNumber(counter)} ${date.formatted}\n`;
             counter++;
           });
         }
