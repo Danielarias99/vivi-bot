@@ -395,10 +395,31 @@ if (normalized === '4' ||
     delete this.appointmentState[to];
 
     // Use the exact date and time from selection
-    const appointmentDateTime = new Date(appointment.selectedDate + 'T' + appointment.selectedTime + ':00');
+    console.log(`📋 Datos de cita - selectedDate: ${appointment.selectedDate}, selectedTime: ${appointment.selectedTime}`);
+    
+    // selectedDate is in format: YYYY-MM-DD
+    // selectedTime is in format: HH:MM (24-hour format from Calendar service)
+    // Construct ISO datetime string
+    const dateTimeString = `${appointment.selectedDate}T${appointment.selectedTime}:00`;
+    console.log(`📅 Construyendo fecha: ${dateTimeString}`);
+    
+    const appointmentDateTime = new Date(dateTimeString);
+    
+    // Check if date is valid
+    if (isNaN(appointmentDateTime.getTime())) {
+      console.error(`❌ Fecha inválida creada: ${dateTimeString}`);
+      console.error(`selectedDate: ${appointment.selectedDate}, selectedTime: ${appointment.selectedTime}`);
+      
+      // Fallback: send error message to user
+      await whatsappService.sendMessage(to, 'Hubo un error al procesar tu cita. Por favor intenta de nuevo escribiendo "hola".');
+      this.completedConversations[to] = true;
+      return;
+    }
+    
     const appointmentDateStr = appointmentDateTime.toISOString();
     
     console.log(`✅ Cita confirmada para: ${appointment.selectedDateFormatted} a las ${appointment.selectedTimeFormatted}`);
+    console.log(`📅 DateTime ISO: ${appointmentDateStr}`);
 
     // 🆕 Create event in Google Calendar
     let calendarEventId = 'N/A';
