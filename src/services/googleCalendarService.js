@@ -273,9 +273,10 @@ export const createCalendarEvent = async (appointmentData) => {
                 dateTime: endDateTime.toISOString(),
                 timeZone: 'America/Bogota',
             },
-            attendees: [
-                { email: email }
-            ],
+            // Removed attendees to avoid Domain-Wide Delegation requirement
+            // attendees: [
+            //     { email: email }
+            // ],
             reminders: {
                 useDefault: false,
                 overrides: [
@@ -289,7 +290,8 @@ export const createCalendarEvent = async (appointmentData) => {
             auth: authClient,
             calendarId: CALENDAR_ID,
             resource: event,
-            sendUpdates: 'all', // Send email notification to attendee
+            // Removed sendUpdates since we're not adding attendees
+            // sendUpdates: 'all',
         });
         
         console.log(`✅ Evento creado en Calendar: ${response.data.id}`);
@@ -323,7 +325,8 @@ export const deleteCalendarEvent = async (eventId) => {
             auth: authClient,
             calendarId: CALENDAR_ID,
             eventId: eventId,
-            sendUpdates: 'all', // Notify attendees
+            // Removed sendUpdates since we don't have attendees
+            // sendUpdates: 'all',
         });
         
         console.log('✅ Evento eliminado exitosamente del Calendar');
@@ -382,7 +385,8 @@ export const updateCalendarEvent = async (eventId, updates) => {
             calendarId: CALENDAR_ID,
             eventId: eventId,
             resource: event,
-            sendUpdates: 'all', // Notify attendees
+            // Removed sendUpdates since we don't have attendees
+            // sendUpdates: 'all',
         });
         
         console.log('✅ Evento actualizado exitosamente en Calendar');
