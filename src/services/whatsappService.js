@@ -132,6 +132,27 @@ class WhatsAppService {
     await sendToWhatsApp(data);
   }
 
+  async sendTemplateMessage(to, templateName, languageCode, components) {
+    const data = {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: {
+          code: languageCode
+        },
+        components: components
+      }
+    };
+
+    console.log(`📤 Enviando Template Message: ${templateName} a ${to}`);
+    console.log(`📋 Components:`, JSON.stringify(components, null, 2));
+    
+    await sendToWhatsApp(data);
+    console.log(`✅ Template enviado exitosamente`);
+  }
+
 
 }
 

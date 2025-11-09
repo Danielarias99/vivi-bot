@@ -899,21 +899,63 @@ if (normalized === '4' ||
       // Enviar notificación al número del psicólogo
       const psychologistPhone = '573147120410'; // Formato WhatsApp: código país + número
       const userName = this.getSenderName(senderInfo);
-      const notificationMessage = `🚨 NOTIFICACIÓN DE EMERGENCIA\n\nUn usuario ha solicitado contacto prioritario con un profesional.\n\nUsuario: ${userName}\nNúmero: ${to}\n\nPor favor, contacta a esta persona lo antes posible.`;
       
       try {
-        await whatsappService.sendMessage(psychologistPhone, notificationMessage);
+        // Get current date/time in Colombia timezone
+        const now = new Date();
+        const colombiaTime = new Intl.DateTimeFormat('es-CO', {
+          timeZone: 'America/Bogota',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).format(now);
+
+        // Send notification using approved template
+        await whatsappService.sendTemplateMessage(
+          psychologistPhone,
+          'alerta_emergencia_psico', // Template name from Meta
+          'es', // Language code (Spanish)
+          [
+            {
+              type: 'body',
+              parameters: [
+                {
+                  type: 'text',
+                  text: userName // {{1}} Estudiante: Daniel
+                },
+                {
+                  type: 'text',
+                  text: colombiaTime // {{2}} Fecha y hora: 20/11/2025
+                },
+                {
+                  type: 'text',
+                  text: to.replace('57', '') // {{3}} WhatsApp: 3116561249 (sin código país)
+                }
+              ]
+            }
+          ]
+        );
+        
+        console.log(`🚨 Notificación de emergencia enviada vía template a ${psychologistPhone}`);
         await whatsappService.sendMessage(to, messages.emergencyProfessionalRequested);
+        
       } catch (error) {
         const errorCode = error?.response?.data?.error?.code;
         const errorMessage = error?.response?.data?.error?.message || error?.message;
         
-        console.error('Error enviando notificación de emergencia:', errorMessage || error?.message || error);
+        console.error('❌ Error enviando template de emergencia:', errorMessage);
+        console.error('Detalles del error:', JSON.stringify(error?.response?.data, null, 2));
         
-        if (errorCode === 131030) {
-          console.error(`⚠️ IMPORTANTE: El número ${psychologistPhone} necesita ser agregado a la lista de destinatarios permitidos en Meta Business Manager.`);
+        if (errorCode === 132000) {
+          console.error(`⚠️ Template "alerta_emergencia_psico" no encontrada o no aprobada`);
+        } else if (errorCode === 132015) {
+          console.error(`⚠️ Parámetros de template incorrectos`);
         }
         
+        // Aún así, informar al usuario que se intentó notificar
         await whatsappService.sendMessage(to, messages.emergencyProfessionalRequested);
       }
       
