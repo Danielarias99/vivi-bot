@@ -257,7 +257,7 @@ export const getAvailableSlots = async () => {
 };
 
 /**
- * Get available dates (next 5 working days)
+ * Get available dates (next 10 working days - 2 weeks)
  * @returns {Promise<Array<{date: Date, formatted: string, dayName: string}>>}
  */
 export const getAvailableDates = async () => {
@@ -274,8 +274,8 @@ export const getAvailableDates = async () => {
         let daysChecked = 0;
         let daysFound = 0;
         
-        // Find next 5 working days
-        while (daysFound < 5 && daysChecked < 14) {
+        // Find next 10 working days (2 weeks)
+        while (daysFound < 10 && daysChecked < 21) { // Check up to 3 weeks to ensure we get 10 working days
             const checkDate = new Date(now);
             checkDate.setDate(checkDate.getDate() + daysChecked + 1); // Start from tomorrow
             checkDate.setHours(0, 0, 0, 0);
@@ -287,7 +287,8 @@ export const getAvailableDates = async () => {
                     date: new Date(checkDate),
                     formatted: `${dayNames[dayOfWeek]} ${checkDate.getDate()} de ${monthNames[checkDate.getMonth()]}`,
                     dayName: dayNames[dayOfWeek],
-                    dateStr: checkDate.toISOString().split('T')[0]
+                    dateStr: checkDate.toISOString().split('T')[0],
+                    weekNumber: daysFound < 5 ? 1 : 2 // Track which week (1 or 2)
                 });
                 daysFound++;
             }
@@ -295,7 +296,7 @@ export const getAvailableDates = async () => {
             daysChecked++;
         }
         
-        console.log(`✅ Encontradas ${availableDates.length} fechas disponibles`);
+        console.log(`✅ Encontradas ${availableDates.length} fechas disponibles (2 semanas)`);
         return availableDates;
         
     } catch (error) {
@@ -392,13 +393,19 @@ export const createCalendarEvent = async (appointmentData) => {
         console.log('📅 Creando evento en Google Calendar...');
         
         const authClient = await getAuth();
-        const { name, email, type, day, time, whatsapp } = appointmentData;
+        const { name, email, type, day, time, whatsapp, datetime } = appointmentData;
         
-        const startDateTime = parseAppointmentDateTime(day, time);
-        
-        if (!startDateTime) {
-            console.warn('⚠️ No se pudo parsear la fecha, evento no creado');
-            return null;
+        // Use the datetime if provided, otherwise try to parse
+        let startDateTime;
+        if (datetime) {
+            startDateTime = new Date(datetime);
+            console.log('✅ Usando datetime proporcionado:', startDateTime.toISOString());
+        } else {
+            startDateTime = parseAppointmentDateTime(day, time);
+            if (!startDateTime) {
+                console.warn('⚠️ No se pudo parsear la fecha, evento no creado');
+                return null;
+            }
         }
         
         const endDateTime = new Date(startDateTime);

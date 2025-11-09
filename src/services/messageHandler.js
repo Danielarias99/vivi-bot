@@ -556,10 +556,10 @@ if (normalized === '4' ||
         const text = message.trim();
         const selectedIndex = parseInt(text);
         
-        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 5) {
-          response = 'Por favor responde con un número del 1 al 5 para seleccionar la fecha.';
+        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 10) {
+          response = 'Por favor responde con un número del 1 al 10 para seleccionar la fecha.';
         } else if (!state.availableDates || !state.availableDates[selectedIndex - 1]) {
-          response = 'Fecha no válida. Por favor elige un número del 1 al 5.';
+          response = 'Fecha no válida. Por favor elige un número del 1 al 10.';
         } else {
           const selectedDate = state.availableDates[selectedIndex - 1];
           state.selectedDate = selectedDate.dateStr;

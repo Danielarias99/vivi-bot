@@ -15,11 +15,31 @@
       askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co):',
       askDay: (dates) => {
         let message = '📅 ¿Qué día prefieres para tu cita?\n\n';
-        message += '📆 Fechas disponibles:\n\n';
-        dates.forEach((date, index) => {
-          message += `${index + 1}️⃣ ${date.formatted}\n`;
-        });
-        message += '\nResponde con el número (1-5)';
+        
+        // Separate dates by week
+        const week1 = dates.filter(d => d.weekNumber === 1);
+        const week2 = dates.filter(d => d.weekNumber === 2);
+        
+        let counter = 1;
+        
+        if (week1.length > 0) {
+          message += '📆 ESTA SEMANA:\n';
+          week1.forEach(date => {
+            message += `${counter}️⃣ ${date.formatted}\n`;
+            counter++;
+          });
+          message += '\n';
+        }
+        
+        if (week2.length > 0) {
+          message += '📆 PRÓXIMA SEMANA:\n';
+          week2.forEach(date => {
+            message += `${counter}️⃣ ${date.formatted}\n`;
+            counter++;
+          });
+        }
+        
+        message += '\nResponde con el número (1-10)';
         return message;
       },
       askTime: (times, selectedDate) => {
