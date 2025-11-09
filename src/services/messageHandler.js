@@ -612,10 +612,18 @@ if (normalized === '4' ||
             response = 'Horario no válido. Por favor elige un número de la lista de horarios disponibles.';
           } else {
             const selectedTime = availableTimeSlots[selectedIndex - 1];
-            state.selectedTime = selectedTime.time;
+            
+            // Ensure time is in HH:MM format (pad with zero if needed)
+            let timeValue = selectedTime.time; // Should be like "9:00" or "14:00"
+            const [hours, minutes] = timeValue.split(':');
+            const paddedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            
+            state.selectedTime = paddedTime; // Save as "09:00" or "14:00"
             state.selectedTimeFormatted = selectedTime.timeFormatted;
             state.step = 'confirm';
             this.appointmentState[to] = state;
+            
+            console.log(`✅ Guardando hora - time: ${state.selectedTime}, formatted: ${state.selectedTimeFormatted}`);
             
             // Show confirmation
             response = messages.appointment.confirmAppointment({
@@ -631,12 +639,16 @@ if (normalized === '4' ||
         break;
       }
       case 'confirm': {
-        const lower = message.toLowerCase().trim();
-        if (lower === 'sí' || lower === 'si' || lower === 'yes') {
+        const text = message.trim();
+        const lower = text.toLowerCase();
+        
+        // Accept both numbers and text
+        if (text === '1' || lower === 'sí' || lower === 'si' || lower === 'yes') {
           // Confirmed - complete appointment
+          console.log('✅ Usuario confirmó la cita');
           await this.completeAppointment(to);
           return;
-        } else if (lower === 'no') {
+        } else if (text === '2' || lower === 'no') {
           // Cancelled - restart flow
           delete this.appointmentState[to];
           response = 'Entendido. Tu cita no ha sido agendada.\n\nSi deseas agendar una nueva cita, escribe "hola" y selecciona la opción 1.';
@@ -644,7 +656,7 @@ if (normalized === '4' ||
           this.completedConversations[to] = true;
           return;
         } else {
-          response = 'Por favor responde SI para confirmar o NO para cancelar.';
+          response = 'Por favor responde con:\n1️⃣ para confirmar\n2️⃣ para cancelar';
         }
         break;
       }

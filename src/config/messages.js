@@ -78,7 +78,7 @@
         message += '\n\nResponde con el número de tu horario preferido';
         return message;
       },
-      confirmAppointment: (data) => `✅ Por favor confirma tu cita:\n\n📍 Tipo: ${data.type}\n👤 Nombre: ${data.name}\n📅 Fecha: ${data.dateFormatted}\n🕐 Hora: ${data.timeFormatted}\n📧 Email: ${data.email}\n\n¿Confirmas esta cita? Responde SI o NO`,
+      confirmAppointment: (data) => `✅ Por favor confirma tu cita:\n\n📍 Tipo: ${data.type}\n👤 Nombre: ${data.name}\n📅 Fecha: ${data.dateFormatted}\n🕐 Hora: ${data.timeFormatted}\n📧 Email: ${data.email}\n\n¿Confirmas esta cita?\n\n1️⃣ Sí, confirmar\n2️⃣ No, cancelar\n\nResponde con el número (1 o 2)`,
       summary: (data) => `✅ ¡Tu cita ha sido agendada exitosamente!\n\nResumen:\n📍 Tipo: ${data.type}\n👤 Nombre: ${data.name}\n📚 Código: ${data.studentCode || 'N/A'}\n🎓 Carrera: ${data.career || 'N/A'}\n📅 Fecha: ${data.dateFormatted}\n🕐 Hora: ${data.timeFormatted}\n📧 Email: ${data.email}\n\nTe enviaremos un recordatorio un día antes. ¡Nos vemos pronto!\n\n¡Hemos finalizado el chat! Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙`,
       reminder: (data) => `🔔 Recordatorio de cita\n\nHola ${data.name}!\n\nTe recordamos que tienes una cita programada:\n\n📅 Día: ${data.day}\n🕐 Hora: ${data.time}\n📍 Tipo: ${data.type}\n\nPor favor, asegúrate de estar disponible a esta hora. Si necesitas cancelar o modificar tu cita, escribe "hola" y selecciona la opción 5.\n\n¡Nos vemos pronto! 💙`,
     },
