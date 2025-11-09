@@ -399,9 +399,9 @@ if (normalized === '4' ||
     
     // selectedDate is in format: YYYY-MM-DD
     // selectedTime is in format: HH:MM (24-hour format from Calendar service)
-    // Construct ISO datetime string
-    const dateTimeString = `${appointment.selectedDate}T${appointment.selectedTime}:00`;
-    console.log(`📅 Construyendo fecha: ${dateTimeString}`);
+    // Construct datetime string with Colombia timezone offset
+    const dateTimeString = `${appointment.selectedDate}T${appointment.selectedTime}:00-05:00`; // Colombia is UTC-5
+    console.log(`📅 Construyendo fecha con zona horaria Colombia: ${dateTimeString}`);
     
     const appointmentDateTime = new Date(dateTimeString);
     
@@ -420,6 +420,7 @@ if (normalized === '4' ||
     
     console.log(`✅ Cita confirmada para: ${appointment.selectedDateFormatted} a las ${appointment.selectedTimeFormatted}`);
     console.log(`📅 DateTime ISO: ${appointmentDateStr}`);
+    console.log(`🌍 Hora local Colombia: ${appointmentDateTime.toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`);
 
     // 🆕 Create event in Google Calendar
     let calendarEventId = 'N/A';
