@@ -630,6 +630,8 @@ if (normalized === '4' ||
             response = messages.appointment.confirmAppointment({
               type: state.type,
               name: state.name,
+              studentCode: state.studentCode,
+              career: state.career,
               dateFormatted: state.selectedDateFormatted,
               timeFormatted: state.selectedTimeFormatted,
               email: state.email
