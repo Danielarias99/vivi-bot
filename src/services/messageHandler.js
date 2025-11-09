@@ -394,35 +394,11 @@ if (normalized === '4' ||
     const appointment = this.appointmentState[to];
     delete this.appointmentState[to];
 
-    // Calcular fecha exacta de la cita
-    let appointmentDate = appointmentReminderService.calculateAppointmentDate(
-      appointment.day,
-      appointment.time
-    );
+    // Use the exact date and time from selection
+    const appointmentDateTime = new Date(appointment.selectedDate + 'T' + appointment.selectedTime + ':00');
+    const appointmentDateStr = appointmentDateTime.toISOString();
     
-    // Si no se pudo calcular, intentar de nuevo con normalización
-    if (!appointmentDate && appointment.day && appointment.time) {
-      console.log('⚠️ Reintentando cálculo de fecha con normalización...');
-      // Normalizar día (quitar acentos, espacios, etc.)
-      const normalizedDay = appointment.day.toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
-      appointmentDate = appointmentReminderService.calculateAppointmentDate(
-        normalizedDay,
-        appointment.time
-      );
-    }
-    
-    const appointmentDateStr = appointmentDate 
-      ? appointmentDate.toISOString() 
-      : 'No calculada';
-    
-    if (!appointmentDate) {
-      console.warn(`⚠️ No se pudo calcular fecha para: ${appointment.day} ${appointment.time}`);
-    } else {
-      console.log(`✅ Fecha calculada: ${appointmentDateStr} para ${appointment.day} ${appointment.time}`);
-    }
+    console.log(`✅ Cita confirmada para: ${appointment.selectedDateFormatted} a las ${appointment.selectedTimeFormatted}`);
 
     // 🆕 Create event in Google Calendar
     let calendarEventId = 'N/A';
@@ -432,9 +408,10 @@ if (normalized === '4' ||
         name: appointment.name,
         email: appointment.email,
         type: appointment.type,
-        day: appointment.day,
-        time: appointment.time,
-        whatsapp: to
+        day: appointment.selectedDateFormatted,
+        time: appointment.selectedTimeFormatted,
+        whatsapp: to,
+        datetime: appointmentDateTime
       });
       
       if (calendarEventId) {
@@ -454,8 +431,8 @@ if (normalized === '4' ||
       appointment.studentCode || 'N/A', // Código estudiantil
       appointment.career || 'N/A',     // Carrera
       appointment.email,               // Email institucional
-      appointment.day,                 // Día preferido
-      appointment.time,                // Hora preferida
+      appointment.selectedDateFormatted, // Día (formato legible)
+      appointment.selectedTimeFormatted, // Hora (formato legible)
       new Date().toISOString(),        // Timestamp de registro
       appointmentDateStr,              // Fecha calculada de la cita
       calendarEventId || 'N/A'         // 🆕 Calendar Event ID
@@ -478,7 +455,12 @@ if (normalized === '4' ||
 
       // Enviar resumen de cita (siempre se envía, incluso si falla Sheets)
       try {
-        await whatsappService.sendMessage(to, messages.appointment.summary(appointment));
+        const summaryData = {
+          ...appointment,
+          dateFormatted: appointment.selectedDateFormatted,
+          timeFormatted: appointment.selectedTimeFormatted
+        };
+        await whatsappService.sendMessage(to, messages.appointment.summary(summaryData));
         // La conversación termina aquí. El usuario debe escribir "hola" para reiniciar.
       } catch (error) {
         console.error('❌ Error enviando mensajes de confirmación:', error?.message || error);
@@ -559,86 +541,89 @@ if (normalized === '4' ||
           state.email = message.trim(); // guardar con formato original
           state.step = 'day';
           this.appointmentState[to] = state; // Persistir estado explícitamente
-          response = messages.appointment.askDay;
-          console.log(`✅ Email válido, avanzando al paso 'day' | Response: ${response ? 'Definido' : 'UNDEFINED'}`);
+          
+          // Get available dates
+          const availableDates = await calendarService.getAvailableDates();
+          state.availableDates = availableDates;
+          this.appointmentState[to] = state;
+          
+          response = messages.appointment.askDay(availableDates);
+          console.log(`✅ Email válido, mostrando ${availableDates.length} fechas disponibles`);
         }
         break;
       }
       case 'day': {
         const text = message.trim();
-        const lower = text.toLowerCase();
-        const dias = [
-          'lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 
-          'sabado', 'sábado', 'domingo', 'cualquier dia', 'cualquier día'
-        ];
-        const tieneDia = dias.some(d => lower.includes(d));
-
-        if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
-          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", "miércoles", etc.\n\nO escribe "cualquier día" si no tienes preferencia.';
+        const selectedIndex = parseInt(text);
+        
+        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 5) {
+          response = 'Por favor responde con un número del 1 al 5 para seleccionar la fecha.';
+        } else if (!state.availableDates || !state.availableDates[selectedIndex - 1]) {
+          response = 'Fecha no válida. Por favor elige un número del 1 al 5.';
         } else {
-          state.day = text; // conservar tal cual lo escribió
+          const selectedDate = state.availableDates[selectedIndex - 1];
+          state.selectedDate = selectedDate.dateStr;
+          state.selectedDateFormatted = selectedDate.formatted;
           state.step = 'time';
-          this.appointmentState[to] = state; // Persistir estado explícitamente
-          response = messages.appointment.askTime;
-          console.log(`✅ Día válido: "${text}", avanzando al paso 'time' | Response: ${response ? 'Definido' : 'UNDEFINED'}`);
+          this.appointmentState[to] = state;
+          
+          // Get available times for selected date
+          const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.dateStr);
+          state.availableTimes = availableTimes;
+          this.appointmentState[to] = state;
+          
+          response = messages.appointment.askTime(availableTimes, selectedDate.formatted);
+          console.log(`✅ Fecha seleccionada: ${selectedDate.formatted}, mostrando horarios`);
         }
         break;
       }
       case 'time': {
         const text = message.trim();
-        const lower = text.toLowerCase();
+        const selectedIndex = parseInt(text);
         
-        // Validar formato de hora: 24h HH:MM or 12h H:MM am/pm
-        const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
-        const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s*(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
-        const tieneHora = re24h.test(lower) || re12h.test(lower) || lower === 'cualquier hora';
-
-        if (!tieneHora) {
-          response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora" si no tienes preferencia.';
+        if (isNaN(selectedIndex) || selectedIndex < 1) {
+          response = 'Por favor responde con el número del horario que deseas.';
         } else {
-          state.time = text; // conservar tal cual lo escribió
+          // Find the selected time (only available ones)
+          const availableTimeSlots = state.availableTimes.filter(t => t.available);
           
-          // 🆕 Verificar disponibilidad en Calendar (solo si no es "cualquier hora")
-          if (lower !== 'cualquier hora' && state.day.toLowerCase() !== 'cualquier dia' && state.day.toLowerCase() !== 'cualquier día') {
-            try {
-              console.log(`📅 Verificando disponibilidad para ${state.day} a las ${state.time}`);
-              const availability = await calendarService.checkAvailability(state.day, state.time);
-              
-              if (!availability.available) {
-                console.log(`⚠️ Horario ocupado: ${state.day} ${state.time}`);
-                
-                // Sugerir horarios alternativos
-                const alternativeSlots = await calendarService.getAvailableSlots();
-                
-                if (alternativeSlots.length > 0) {
-                  let suggestion = '⚠️ Lo siento, ese horario ya está ocupado.\n\n';
-                  suggestion += '📅 Aquí hay algunos horarios disponibles:\n\n';
-                  
-                  alternativeSlots.forEach((slot, index) => {
-                    suggestion += `${index + 1}. ${slot.formatted}\n`;
-                  });
-                  
-                  suggestion += '\n💡 Por favor elige uno de estos horarios escribiendo el día y la hora, o escribe otro horario diferente.';
-                  response = suggestion;
-                  
-                  // No avanzar al siguiente paso, esperar nueva respuesta
-                  break;
-                } else {
-                  // Si no hay slots alternativos, continuar de todos modos
-                  console.warn('⚠️ No se encontraron horarios alternativos, continuando...');
-                }
-              } else {
-                console.log(`✅ Horario disponible: ${state.day} ${state.time}`);
-              }
-            } catch (calError) {
-              console.error('❌ Error verificando disponibilidad:', calError?.message || calError);
-              console.warn('⚠️ Continuando sin verificar disponibilidad');
-            }
+          if (selectedIndex > availableTimeSlots.length) {
+            response = 'Horario no válido. Por favor elige un número de la lista de horarios disponibles.';
+          } else {
+            const selectedTime = availableTimeSlots[selectedIndex - 1];
+            state.selectedTime = selectedTime.time;
+            state.selectedTimeFormatted = selectedTime.timeFormatted;
+            state.step = 'confirm';
+            this.appointmentState[to] = state;
+            
+            // Show confirmation
+            response = messages.appointment.confirmAppointment({
+              type: state.type,
+              name: state.name,
+              dateFormatted: state.selectedDateFormatted,
+              timeFormatted: state.selectedTimeFormatted,
+              email: state.email
+            });
+            console.log(`✅ Hora seleccionada: ${selectedTime.timeFormatted}, solicitando confirmación`);
           }
-          
-          // Si está disponible o es "cualquier hora", continuar
+        }
+        break;
+      }
+      case 'confirm': {
+        const lower = message.toLowerCase().trim();
+        if (lower === 'sí' || lower === 'si' || lower === 'yes') {
+          // Confirmed - complete appointment
           await this.completeAppointment(to);
-          return; // Salir aquí para no enviar un mensaje adicional
+          return;
+        } else if (lower === 'no') {
+          // Cancelled - restart flow
+          delete this.appointmentState[to];
+          response = 'Entendido. Tu cita no ha sido agendada.\n\nSi deseas agendar una nueva cita, escribe "hola" y selecciona la opción 1.';
+          await whatsappService.sendMessage(to, response);
+          this.completedConversations[to] = true;
+          return;
+        } else {
+          response = 'Por favor responde SI para confirmar o NO para cancelar.';
         }
         break;
       }

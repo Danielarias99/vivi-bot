@@ -13,9 +13,53 @@
       askStudentCode: 'Gracias. Indica tu código estudiantil:',
       askCareer: '¿Cuál es tu programa o carrera?',
       askEmail: 'Por favor, ingresa tu correo institucional (@correounivalle.edu.co):',
-      askDay: 'Perfecto. ¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, miércoles, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
-      askTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
-      summary: (data) => `✅ Tu cita ha sido solicitada. Resumen:\nTipo: ${data.type}\nNombre: ${data.name}\nCódigo: ${data.studentCode || 'N/A'}\nCarrera: ${data.career || 'N/A'}\nCorreo: ${data.email}\nDía preferido: ${data.day}\nHora preferida: ${data.time}\nTe enviaremos confirmación y recordatorio un día antes.\n\n¡Hemos finalizado el chat !Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙.`,
+      askDay: (dates) => {
+        let message = '📅 ¿Qué día prefieres para tu cita?\n\n';
+        message += '📆 Fechas disponibles:\n\n';
+        dates.forEach((date, index) => {
+          message += `${index + 1}️⃣ ${date.formatted}\n`;
+        });
+        message += '\nResponde con el número (1-5)';
+        return message;
+      },
+      askTime: (times, selectedDate) => {
+        let message = `🕐 ¿Qué hora prefieres para ${selectedDate}?\n\n`;
+        
+        const morningTimes = times.filter(t => t.isMorning && t.available);
+        const afternoonTimes = times.filter(t => !t.isMorning && t.available);
+        
+        let counter = 1;
+        
+        if (morningTimes.length > 0) {
+          message += '🌅 MAÑANA (8:00 AM - 12:00 PM):\n';
+          morningTimes.forEach(time => {
+            message += `${counter}️⃣ ${time.timeFormatted}\n`;
+            time.index = counter;
+            counter++;
+          });
+          message += '\n';
+        }
+        
+        if (afternoonTimes.length > 0) {
+          message += '🌆 TARDE (2:00 PM - 5:00 PM):\n';
+          afternoonTimes.forEach(time => {
+            message += `${counter}️⃣ ${time.timeFormatted}\n`;
+            time.index = counter;
+            counter++;
+          });
+        }
+        
+        const busyTimes = times.filter(t => !t.available);
+        if (busyTimes.length > 0) {
+          message += '\n❌ No disponibles: ';
+          message += busyTimes.map(t => t.timeFormatted).join(', ');
+        }
+        
+        message += '\n\nResponde con el número de tu horario preferido';
+        return message;
+      },
+      confirmAppointment: (data) => `✅ Por favor confirma tu cita:\n\n📍 Tipo: ${data.type}\n👤 Nombre: ${data.name}\n📅 Fecha: ${data.dateFormatted}\n🕐 Hora: ${data.timeFormatted}\n📧 Email: ${data.email}\n\n¿Confirmas esta cita? Responde SI o NO`,
+      summary: (data) => `✅ ¡Tu cita ha sido agendada exitosamente!\n\nResumen:\n📍 Tipo: ${data.type}\n👤 Nombre: ${data.name}\n📚 Código: ${data.studentCode || 'N/A'}\n🎓 Carrera: ${data.career || 'N/A'}\n📅 Fecha: ${data.dateFormatted}\n🕐 Hora: ${data.timeFormatted}\n📧 Email: ${data.email}\n\nTe enviaremos un recordatorio un día antes. ¡Nos vemos pronto!\n\n¡Hemos finalizado el chat! Gracias por usar el asistente Vivi! Si necesitas ayuda en otro momento, aquí estaré. ¡Cuídate mucho! 💙`,
       reminder: (data) => `🔔 Recordatorio de cita\n\nHola ${data.name}!\n\nTe recordamos que tienes una cita programada:\n\n📅 Día: ${data.day}\n🕐 Hora: ${data.time}\n📍 Tipo: ${data.type}\n\nPor favor, asegúrate de estar disponible a esta hora. Si necesitas cancelar o modificar tu cita, escribe "hola" y selecciona la opción 5.\n\n¡Nos vemos pronto! 💙`,
     },
     workshops: {

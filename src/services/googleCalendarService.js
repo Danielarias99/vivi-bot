@@ -178,9 +178,9 @@ export const getAvailableSlots = async () => {
         const authClient = await getAuth();
         const now = new Date();
         const weekLater = new Date(now);
-        weekLater.setDate(weekLater.getDate() + 7);
+        weekLater.setDate(weekLater.getDate() + 14); // Look ahead 2 weeks
         
-        // Fetch all events in the next 7 days
+        // Fetch all events in the next 2 weeks
         const response = await calendar.events.list({
             auth: authClient,
             calendarId: CALENDAR_ID,
@@ -192,18 +192,20 @@ export const getAvailableSlots = async () => {
         
         const busyEvents = response.data.items || [];
         
-        // Define working hours (9 AM - 5 PM, Monday to Friday)
-        const workingHours = [9, 10, 11, 14, 15, 16]; // Skip 12-13 for lunch
-        const workingDays = [1, 2, 3, 4, 5]; // Monday to Friday
+        // Define working hours: 8-12 AM and 2-5 PM, Monday to Friday
+        const morningHours = [8, 9, 10, 11]; // 8 AM to 11 AM (last slot starts at 11, ends at 12)
+        const afternoonHours = [14, 15, 16]; // 2 PM to 4 PM (last slot starts at 4, ends at 5)
+        const workingHours = [...morningHours, ...afternoonHours];
+        const workingDays = [1, 2, 3, 4, 5]; // Monday to Friday only
         
         const availableSlots = [];
         
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 14; i++) {
             const checkDate = new Date(now);
             checkDate.setDate(checkDate.getDate() + i);
             
             const dayOfWeek = checkDate.getDay();
-            if (!workingDays.includes(dayOfWeek)) continue;
+            if (!workingDays.includes(dayOfWeek)) continue; // Skip weekends
             
             for (const hour of workingHours) {
                 const slotStart = new Date(checkDate);
@@ -212,6 +214,9 @@ export const getAvailableSlots = async () => {
                 const slotEnd = new Date(slotStart);
                 slotEnd.setHours(hour + 1);
                 
+                // Skip past time slots
+                if (slotStart <= now) continue;
+                
                 // Check if this slot conflicts with any busy event
                 const hasConflict = busyEvents.some(event => {
                     const eventStart = new Date(event.start.dateTime || event.start.date);
@@ -219,13 +224,24 @@ export const getAvailableSlots = async () => {
                     return (slotStart < eventEnd && slotEnd > eventStart);
                 });
                 
-                if (!hasConflict && slotStart > now) {
+                if (!hasConflict) {
                     const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                    const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                                       'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                    
+                    const timeFormatted = hour < 12 
+                        ? `${hour}:00 AM` 
+                        : hour === 12 
+                            ? '12:00 PM' 
+                            : `${hour - 12}:00 PM`;
+                    
                     availableSlots.push({
                         day: dayNames[dayOfWeek],
                         time: `${hour}:00`,
                         datetime: slotStart,
-                        formatted: `${dayNames[dayOfWeek]} ${checkDate.getDate()}/${checkDate.getMonth() + 1} a las ${hour}:00`
+                        formatted: `${dayNames[dayOfWeek]} ${checkDate.getDate()} de ${monthNames[checkDate.getMonth()]} a las ${timeFormatted}`,
+                        date: checkDate.toISOString().split('T')[0],
+                        timeFormatted: timeFormatted
                     });
                 }
             }
@@ -236,6 +252,132 @@ export const getAvailableSlots = async () => {
         
     } catch (error) {
         console.error('❌ Error obteniendo horarios disponibles:', error?.message || error);
+        return [];
+    }
+};
+
+/**
+ * Get available dates (next 5 working days)
+ * @returns {Promise<Array<{date: Date, formatted: string, dayName: string}>>}
+ */
+export const getAvailableDates = async () => {
+    try {
+        console.log('📅 Obteniendo fechas disponibles...');
+        
+        const now = new Date();
+        const availableDates = [];
+        const workingDays = [1, 2, 3, 4, 5]; // Monday to Friday
+        const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                           'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        let daysChecked = 0;
+        let daysFound = 0;
+        
+        // Find next 5 working days
+        while (daysFound < 5 && daysChecked < 14) {
+            const checkDate = new Date(now);
+            checkDate.setDate(checkDate.getDate() + daysChecked + 1); // Start from tomorrow
+            checkDate.setHours(0, 0, 0, 0);
+            
+            const dayOfWeek = checkDate.getDay();
+            
+            if (workingDays.includes(dayOfWeek)) {
+                availableDates.push({
+                    date: new Date(checkDate),
+                    formatted: `${dayNames[dayOfWeek]} ${checkDate.getDate()} de ${monthNames[checkDate.getMonth()]}`,
+                    dayName: dayNames[dayOfWeek],
+                    dateStr: checkDate.toISOString().split('T')[0]
+                });
+                daysFound++;
+            }
+            
+            daysChecked++;
+        }
+        
+        console.log(`✅ Encontradas ${availableDates.length} fechas disponibles`);
+        return availableDates;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo fechas disponibles:', error?.message || error);
+        return [];
+    }
+};
+
+/**
+ * Get available time slots for a specific date
+ * @param {string} dateStr - Date in YYYY-MM-DD format
+ * @returns {Promise<Array<{time: string, timeFormatted: string, datetime: Date}>>}
+ */
+export const getAvailableTimesForDate = async (dateStr) => {
+    try {
+        console.log(`🕐 Obteniendo horarios disponibles para ${dateStr}...`);
+        
+        const authClient = await getAuth();
+        const targetDate = new Date(dateStr + 'T00:00:00');
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        // Fetch events for that specific day
+        const response = await calendar.events.list({
+            auth: authClient,
+            calendarId: CALENDAR_ID,
+            timeMin: startOfDay.toISOString(),
+            timeMax: endOfDay.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime'
+        });
+        
+        const busyEvents = response.data.items || [];
+        console.log(`📋 Eventos ocupados en ${dateStr}: ${busyEvents.length}`);
+        
+        // Define working hours: 8-12 AM and 2-5 PM
+        const morningHours = [8, 9, 10, 11];
+        const afternoonHours = [14, 15, 16];
+        const allHours = [...morningHours, ...afternoonHours];
+        
+        const availableTimes = [];
+        const now = new Date();
+        
+        for (const hour of allHours) {
+            const slotStart = new Date(targetDate);
+            slotStart.setHours(hour, 0, 0, 0);
+            
+            const slotEnd = new Date(slotStart);
+            slotEnd.setHours(hour + 1);
+            
+            // Skip past time slots
+            if (slotStart <= now) continue;
+            
+            // Check if this slot conflicts with any busy event
+            const hasConflict = busyEvents.some(event => {
+                const eventStart = new Date(event.start.dateTime || event.start.date);
+                const eventEnd = new Date(event.end.dateTime || event.end.date);
+                return (slotStart < eventEnd && slotEnd > eventStart);
+            });
+            
+            const timeFormatted = hour < 12 
+                ? `${hour}:00 AM` 
+                : hour === 12 
+                    ? '12:00 PM' 
+                    : `${hour - 12}:00 PM`;
+            
+            availableTimes.push({
+                time: `${hour}:00`,
+                timeFormatted: timeFormatted,
+                datetime: slotStart,
+                available: !hasConflict,
+                isMorning: hour < 12
+            });
+        }
+        
+        console.log(`✅ Encontrados ${availableTimes.filter(t => t.available).length}/${availableTimes.length} horarios disponibles`);
+        return availableTimes;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo horarios para fecha específica:', error?.message || error);
         return [];
     }
 };
@@ -401,6 +543,8 @@ export const updateCalendarEvent = async (eventId, updates) => {
 export default {
     checkAvailability,
     getAvailableSlots,
+    getAvailableDates,
+    getAvailableTimesForDate,
     createCalendarEvent,
     deleteCalendarEvent,
     updateCalendarEvent
