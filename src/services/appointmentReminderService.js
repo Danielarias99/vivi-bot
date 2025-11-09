@@ -169,15 +169,9 @@ async function getPendingAppointments() {
     const whatsappIndex = headers.indexOf('WhatsApp');
     const typeIndex = headers.indexOf('Tipo de Cita');
     const nameIndex = headers.indexOf('Nombre Completo');
-    // Buscar día con diferentes variaciones de nombre
-    const dayIndex = headers.findIndex(h => 
-      h && (h.toLowerCase().includes('día') || h.toLowerCase().includes('dia')) && 
-      (h.toLowerCase().includes('preferido') || !h.toLowerCase().includes('registro'))
-    );
-    // Buscar hora con diferentes variaciones
-    const timeIndex = headers.findIndex(h => 
-      h && (h.toLowerCase().includes('hora') || h.toLowerCase().includes('time'))
-    );
+    // Leer las columnas legibles formateadas (columnas 6 y 7)
+    const dayIndex = headers.indexOf('Fecha de Cita (Legible)'); // Columna 6
+    const timeIndex = headers.indexOf('Hora de Cita (Legible)');  // Columna 7
     const reminderSentIndex = headers.indexOf('Recordatorio Enviado');
     
     // Si no hay columna de recordatorio, asumir que no se ha enviado
