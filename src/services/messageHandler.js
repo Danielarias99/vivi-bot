@@ -1045,7 +1045,7 @@ if (normalized === '4' ||
         const tieneDia = dias.some(d => lower.includes(d));
         
         if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
-          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", etc.\n\nO escribe "cualquier día".';
+          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", etc..';
         } else {
           state.newDay = text;
           state.step = 'newTime';
