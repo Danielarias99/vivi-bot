@@ -43,14 +43,20 @@ const getAuth = async () => {
             console.log('✅ Private key parsed and newlines fixed');
             authConfig = {
                 credentials: credentials,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+                scopes: [
+                    'https://www.googleapis.com/auth/spreadsheets',
+                    'https://www.googleapis.com/auth/calendar'
+                ]
             };
         } else {
             // Local development: use credentials file
             console.log('📁 Using Google credentials from file');
             authConfig = {
                 keyFile: path.join(process.cwd(), 'src/credentials', 'credentials.json'),
-                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+                scopes: [
+                    'https://www.googleapis.com/auth/spreadsheets',
+                    'https://www.googleapis.com/auth/calendar'
+                ]
             };
         }
         

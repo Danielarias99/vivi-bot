@@ -1,5 +1,6 @@
 import whatsappService from './whatsappService.js';
 import appendToSheet, { readSheet, updateRowInSheet, deleteRowInSheet } from './googleSheetsService.js';
+import calendarService from './googleCalendarService.js';
 import messages from '../config/messages.js';
 import wellbeingResources from '../config/wellbeingResources.js';
 import { preguntarAGemini } from './geminiService.js';
@@ -423,6 +424,29 @@ if (normalized === '4' ||
       console.log(`✅ Fecha calculada: ${appointmentDateStr} para ${appointment.day} ${appointment.time}`);
     }
 
+    // 🆕 Create event in Google Calendar
+    let calendarEventId = 'N/A';
+    try {
+      console.log('📅 Creando evento en Google Calendar...');
+      calendarEventId = await calendarService.createCalendarEvent({
+        name: appointment.name,
+        email: appointment.email,
+        type: appointment.type,
+        day: appointment.day,
+        time: appointment.time,
+        whatsapp: to
+      });
+      
+      if (calendarEventId) {
+        console.log(`✅ Evento creado en Calendar con ID: ${calendarEventId}`);
+      } else {
+        console.warn('⚠️ No se pudo crear evento en Calendar (continuando flujo)');
+      }
+    } catch (calError) {
+      console.error('❌ Error creando evento en Calendar:', calError?.message || calError);
+      console.warn('⚠️ El bot continuará sin el evento en Calendar');
+    }
+
     const userData = [
       to,                              // WhatsApp del usuario
       appointment.type,                // Presencial o Virtual
@@ -433,7 +457,8 @@ if (normalized === '4' ||
       appointment.day,                 // Día preferido
       appointment.time,                // Hora preferida
       new Date().toISOString(),        // Timestamp de registro
-      appointmentDateStr               // Fecha calculada de la cita
+      appointmentDateStr,              // Fecha calculada de la cita
+      calendarEventId || 'N/A'         // 🆕 Calendar Event ID
     ];
 
     // Google Sheets - Guardar cita en segundo plano
@@ -572,7 +597,46 @@ if (normalized === '4' ||
           response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora" si no tienes preferencia.';
         } else {
           state.time = text; // conservar tal cual lo escribió
-          // completeAppointment ya envía los mensajes, no necesitamos response
+          
+          // 🆕 Verificar disponibilidad en Calendar (solo si no es "cualquier hora")
+          if (lower !== 'cualquier hora' && state.day.toLowerCase() !== 'cualquier dia' && state.day.toLowerCase() !== 'cualquier día') {
+            try {
+              console.log(`📅 Verificando disponibilidad para ${state.day} a las ${state.time}`);
+              const availability = await calendarService.checkAvailability(state.day, state.time);
+              
+              if (!availability.available) {
+                console.log(`⚠️ Horario ocupado: ${state.day} ${state.time}`);
+                
+                // Sugerir horarios alternativos
+                const alternativeSlots = await calendarService.getAvailableSlots();
+                
+                if (alternativeSlots.length > 0) {
+                  let suggestion = '⚠️ Lo siento, ese horario ya está ocupado.\n\n';
+                  suggestion += '📅 Aquí hay algunos horarios disponibles:\n\n';
+                  
+                  alternativeSlots.forEach((slot, index) => {
+                    suggestion += `${index + 1}. ${slot.formatted}\n`;
+                  });
+                  
+                  suggestion += '\n💡 Por favor elige uno de estos horarios escribiendo el día y la hora, o escribe otro horario diferente.';
+                  response = suggestion;
+                  
+                  // No avanzar al siguiente paso, esperar nueva respuesta
+                  break;
+                } else {
+                  // Si no hay slots alternativos, continuar de todos modos
+                  console.warn('⚠️ No se encontraron horarios alternativos, continuando...');
+                }
+              } else {
+                console.log(`✅ Horario disponible: ${state.day} ${state.time}`);
+              }
+            } catch (calError) {
+              console.error('❌ Error verificando disponibilidad:', calError?.message || calError);
+              console.warn('⚠️ Continuando sin verificar disponibilidad');
+            }
+          }
+          
+          // Si está disponible o es "cualquier hora", continuar
           await this.completeAppointment(to);
           return; // Salir aquí para no enviar un mensaje adicional
         }
@@ -889,6 +953,14 @@ if (normalized === '4' ||
             try {
               const { deleteRowInSheet } = await import('./googleSheetsService.js');
               console.log(`🗑️ Cancelando cita en fila ${state.foundAppointment.rowIndex}`);
+              
+              // 🆕 Eliminar evento de Calendar si existe
+              const eventId = state.foundAppointment.fullRow[10]; // Columna K (index 10): Calendar Event ID
+              if (eventId && eventId !== 'N/A') {
+                console.log(`📅 Eliminando evento de Calendar: ${eventId}`);
+                await calendarService.deleteCalendarEvent(eventId);
+              }
+              
               await deleteRowInSheet(state.foundAppointment.rowIndex, 'citas');
               
               response = messages.cancelModify.confirmCancel;
@@ -1070,13 +1142,26 @@ if (normalized === '4' ||
       // Construir la fila actualizada
       let updatedRow = [...appointment.fullRow];
       
+      // 🆕 Preparar datos para actualizar Calendar
+      let calendarUpdates = {};
+      
       if (state.modifyField === 'type') {
         updatedRow[1] = state.newValue; // Columna B: Tipo
+        calendarUpdates.type = state.newValue;
         console.log(`🔄 Nuevo tipo: ${state.newValue}`);
       } else if (state.modifyField === 'dayTime') {
         updatedRow[6] = state.newDay;  // Columna G: Día
         updatedRow[7] = state.newTime; // Columna H: Hora
+        calendarUpdates.day = state.newDay;
+        calendarUpdates.time = state.newTime;
         console.log(`🔄 Nuevo día: ${state.newDay}, Nueva hora: ${state.newTime}`);
+      }
+      
+      // 🆕 Actualizar evento en Calendar si existe
+      const eventId = appointment.fullRow[10]; // Columna K (index 10): Calendar Event ID
+      if (eventId && eventId !== 'N/A') {
+        console.log(`📅 Actualizando evento en Calendar: ${eventId}`);
+        await calendarService.updateCalendarEvent(eventId, calendarUpdates);
       }
       
       await updateRowInSheet(appointment.rowIndex, updatedRow, 'citas');
