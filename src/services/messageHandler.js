@@ -917,7 +917,7 @@ if (normalized === '4' ||
         await whatsappService.sendTemplateMessage(
           psychologistPhone,
           'alerta_emergencia_psico', // Template name from Meta
-          'es', // Language code (Spanish)
+          'es_CO', // Language code (Spanish - Colombia)
           [
             {
               type: 'body',
