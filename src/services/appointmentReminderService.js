@@ -169,9 +169,9 @@ async function getPendingAppointments() {
     const whatsappIndex = headers.indexOf('WhatsApp');
     const typeIndex = headers.indexOf('Tipo de Cita');
     const nameIndex = headers.indexOf('Nombre Completo');
-    // Leer las columnas legibles formateadas (columnas 6 y 7)
-    const dayIndex = headers.indexOf('Fecha de Cita (Legible)'); // Columna 6
-    const timeIndex = headers.indexOf('Hora de Cita (Legible)');  // Columna 7
+    // Leer las columnas con los nombres exactos de Sheets
+    const dayIndex = headers.indexOf('Día');    // Columna G
+    const timeIndex = headers.indexOf('Hora');  // Columna H
     const reminderSentIndex = headers.indexOf('Recordatorio Enviado');
     
     // Si no hay columna de recordatorio, asumir que no se ha enviado
