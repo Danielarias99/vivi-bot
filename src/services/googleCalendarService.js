@@ -274,15 +274,41 @@ export const getAvailableDates = async () => {
         let daysChecked = 0;
         let daysFound = 0;
         
+        // Determine starting point based on current time
+        // If it's a working day AND there's still time to schedule today (before 5 PM), start from today
+        // Otherwise, start from tomorrow
+        const currentHour = now.getHours();
+        const currentDay = now.getDay();
+        const isWorkingDay = workingDays.includes(currentDay);
+        const hasTimeToday = currentHour < 17; // Before 5 PM (last slot is 4-5 PM)
+        
+        // If it's a working day and there's still time to schedule today, start from 0
+        // Otherwise, start from tomorrow (+1)
+        const startOffset = (isWorkingDay && hasTimeToday) ? 0 : 1;
+        
+        console.log(`🕐 Hora actual: ${currentHour}:${now.getMinutes()}, Día: ${dayNames[currentDay]}`);
+        console.log(`📅 Empezando búsqueda desde: ${startOffset === 0 ? 'HOY' : 'MAÑANA'}`);
+        
         // Find next 10 working days (2 weeks)
         while (daysFound < 10 && daysChecked < 21) { // Check up to 3 weeks to ensure we get 10 working days
             const checkDate = new Date(now);
-            checkDate.setDate(checkDate.getDate() + daysChecked + 1); // Start from tomorrow
+            checkDate.setDate(checkDate.getDate() + daysChecked + startOffset); // Use startOffset
             checkDate.setHours(0, 0, 0, 0);
             
             const dayOfWeek = checkDate.getDay();
             
             if (workingDays.includes(dayOfWeek)) {
+                // If it's today, verify there are available time slots
+                if (daysChecked === 0 && startOffset === 0) {
+                    // Check if there are available times for today
+                    const availableTimes = await getAvailableTimesForDate(checkDate.toISOString().split('T')[0]);
+                    if (availableTimes.length === 0) {
+                        console.log(`⏭️ Hoy no tiene horarios disponibles, saltando...`);
+                        daysChecked++;
+                        continue; // No available times today, skip
+                    }
+                }
+                
                 availableDates.push({
                     date: new Date(checkDate),
                     formatted: `${dayNames[dayOfWeek]} ${checkDate.getDate()} de ${monthNames[checkDate.getMonth()]}`,
