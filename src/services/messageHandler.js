@@ -897,7 +897,7 @@ if (normalized === '4' ||
     // --- Caso: Respuesta Afirmativa (SI) ---
     if (lower === 'sí' || lower === 'si' || lower === 'yes' || lower === 's') {
       // Enviar notificación al número del psicólogo
-      const psychologistPhone = '573147120410'; // Formato WhatsApp: código país + número
+      const psychologistPhone = '573232898573'; // Formato WhatsApp: código país + número
       const userName = this.getSenderName(senderInfo);
       
       try {
