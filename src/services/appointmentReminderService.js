@@ -135,7 +135,10 @@ function parseTime(timeStr) {
  * @returns {boolean}
  */
 function needsReminder(appointmentDate) {
-  if (!appointmentDate) return false;
+  if (!appointmentDate) {
+    console.log('   ⚠️ No hay fecha de cita');
+    return false;
+  }
   
   const now = new Date();
   const tomorrow = new Date(now);
@@ -145,8 +148,15 @@ function needsReminder(appointmentDate) {
   const dayAfterTomorrow = new Date(tomorrow);
   dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
   
+  console.log(`   📅 Ahora: ${now.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  console.log(`   📅 Mañana: ${tomorrow.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  console.log(`   📅 Cita: ${appointmentDate.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  
   // La cita es mañana si está entre mañana 00:00 y pasado mañana 00:00
-  return appointmentDate >= tomorrow && appointmentDate < dayAfterTomorrow;
+  const isForTomorrow = appointmentDate >= tomorrow && appointmentDate < dayAfterTomorrow;
+  console.log(`   🔔 ¿Es para mañana?: ${isForTomorrow}`);
+  
+  return isForTomorrow;
 }
 
 /**
@@ -155,81 +165,112 @@ function needsReminder(appointmentDate) {
  */
 async function getPendingAppointments() {
   try {
+    console.log('📋 === INICIANDO BÚSQUEDA DE CITAS PENDIENTES ===');
     const rows = await readSheet('citas');
     
     if (!rows || rows.length === 0) {
+      console.log('⚠️ No se encontraron filas en la hoja "citas"');
       return [];
     }
     
+    console.log(`📊 Total de filas en Sheets: ${rows.length}`);
+    
     // La primera fila son los encabezados
     const headers = rows[0];
+    console.log(`📋 Encabezados: ${headers.join(', ')}`);
     const appointments = [];
     
     // Buscar índices de columnas
     const whatsappIndex = headers.indexOf('WhatsApp');
     const typeIndex = headers.indexOf('Tipo de Cita');
     const nameIndex = headers.indexOf('Nombre Completo');
-    // Leer las columnas con los nombres exactos de Sheets
-    const dayIndex = headers.indexOf('Día');    // Columna G
-    const timeIndex = headers.indexOf('Hora');  // Columna H
+    const dayIndex = headers.indexOf('Día');
+    const timeIndex = headers.indexOf('Hora');
     const reminderSentIndex = headers.indexOf('Recordatorio Enviado');
     
-    // Si no hay columna de recordatorio, asumir que no se ha enviado
+    console.log(`📍 Índices de columnas encontrados:`);
+    console.log(`   - WhatsApp: ${whatsappIndex}`);
+    console.log(`   - Nombre: ${nameIndex}`);
+    console.log(`   - Día: ${dayIndex}`);
+    console.log(`   - Hora: ${timeIndex}`);
+    console.log(`   - Recordatorio Enviado: ${reminderSentIndex}`);
+    
     const hasReminderColumn = reminderSentIndex !== -1;
     
     // Procesar cada fila (saltando encabezados)
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       
+      console.log(`\n--- Fila ${i + 1} ---`);
+      
       // Verificar si ya se envió el recordatorio
-      if (hasReminderColumn && row[reminderSentIndex] && row[reminderSentIndex].toLowerCase() === 'sí') {
-        continue; // Ya se envió, saltar
+      if (hasReminderColumn && row[reminderSentIndex]) {
+        console.log(`✅ Ya tiene recordatorio enviado: "${row[reminderSentIndex]}"`);
+        if (row[reminderSentIndex].toLowerCase() === 'sí') {
+          console.log(`⏭️ Saltando fila ${i + 1} (recordatorio ya enviado)`);
+          continue;
+        }
       }
       
       // Extraer datos
       const whatsapp = row[whatsappIndex] || '';
       const type = row[typeIndex] || '';
       const name = row[nameIndex] || '';
-      const day = row[dayIndex] || ''; // Formato legible (ej: "lunes 10 de noviembre")
-      const time = row[timeIndex] || ''; // Formato legible (ej: "9:00 AM")
+      const day = row[dayIndex] || '';
+      const time = row[timeIndex] || '';
       
-      // 🆕 Leer fecha ISO directamente de la columna 9 (Fecha de Cita calculada)
-      const appointmentDateStr = row[9] || ''; // Columna "Fecha de Cita (ISO)"
-      const calendarEventId = row[10] || ''; // Columna "Calendar Event ID"
+      console.log(`👤 Nombre: ${name}`);
+      console.log(`📱 WhatsApp: ${whatsapp}`);
+      console.log(`📅 Día: ${day}`);
+      console.log(`🕐 Hora: ${time}`);
+      
+      // Leer fecha ISO directamente de la columna 9
+      const appointmentDateStr = row[9] || '';
+      const calendarEventId = row[10] || '';
+      
+      console.log(`📆 Fecha ISO (col 9): ${appointmentDateStr}`);
+      console.log(`📌 Event ID (col 10): ${calendarEventId}`);
       
       if (!whatsapp || !appointmentDateStr) {
-        console.warn(`⚠️ Fila ${i + 1}: Falta WhatsApp o fecha de cita`);
-        continue; // Datos incompletos, saltar
+        console.warn(`⚠️ Fila ${i + 1}: Datos incompletos (WhatsApp: ${!!whatsapp}, Fecha: ${!!appointmentDateStr})`);
+        continue;
       }
       
-      // 🆕 Usar fecha ISO directamente (más confiable que parsear texto)
+      // Usar fecha ISO directamente
       const appointmentDate = new Date(appointmentDateStr);
       
       // Validar que la fecha sea válida
       if (isNaN(appointmentDate.getTime())) {
-        console.warn(`⚠️ Fecha inválida en fila ${i + 1}: ${appointmentDateStr}`);
+        console.warn(`❌ Fecha inválida en fila ${i + 1}: ${appointmentDateStr}`);
         continue;
       }
       
-      console.log(`📋 Fila ${i + 1}: ${name} - Cita el ${appointmentDate.toLocaleDateString('es-CO')} (${day} ${time})`);
+      console.log(`📋 Cita válida: ${name} - ${appointmentDate.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
       
-      if (needsReminder(appointmentDate)) {
+      const needsRem = needsReminder(appointmentDate);
+      console.log(`🔔 ¿Necesita recordatorio?: ${needsRem ? 'SÍ ✅' : 'NO ❌'}`);
+      
+      if (needsRem) {
+        console.log(`✅ Agregando a lista de recordatorios`);
         appointments.push({
           whatsapp,
           type,
           name,
-          day, // Formato legible para el mensaje
-          time, // Formato legible para el mensaje
+          day,
+          time,
           appointmentDate,
           calendarEventId,
-          rowIndex: i + 1 // +1 porque Google Sheets es 1-indexed
+          rowIndex: i + 1
         });
       }
     }
     
+    console.log(`\n📊 === RESUMEN ===`);
+    console.log(`Total de citas que necesitan recordatorio: ${appointments.length}`);
+    
     return appointments;
   } catch (error) {
-    console.error('Error obteniendo citas pendientes:', error);
+    console.error('❌ Error obteniendo citas pendientes:', error);
     return [];
   }
 }

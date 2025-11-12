@@ -45,7 +45,7 @@ app.listen(config.PORT, () => {
   
   console.log('✅ Scheduler de recordatorios configurado (cada hora)');
   
-  // Ejecutar una vez al iniciar el servidor (opcional, para testing)
-  // Descomentar si quieres probar inmediatamente
-  // appointmentReminderService.sendAppointmentReminders();
+  // Ejecutar una vez al iniciar el servidor (para testing y verificación inmediata)
+  console.log('🔄 Ejecutando verificación inicial de recordatorios...');
+  appointmentReminderService.sendAppointmentReminders();
 });
