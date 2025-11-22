@@ -379,9 +379,12 @@ export const getAvailableTimesForDate = async (dateStr) => {
         const now = new Date();
         
         for (const hour of allHours) {
-            // Create slot times in Colombia timezone
-            const slotStart = new Date(dateStr + 'T' + String(hour).padStart(2, '0') + ':00:00-05:00');
-            const slotEnd = new Date(dateStr + 'T' + String(hour + 1).padStart(2, '0') + ':00:00-05:00');
+            // Parse the date correctly to avoid timezone issues
+            const [year, month, day] = dateStr.split('-').map(Number);
+            
+            // Create dates in UTC, converting from Colombia time (UTC-5)
+            const slotStart = new Date(Date.UTC(year, month - 1, day, hour + 5, 0, 0)); // +5 to convert Colombia time to UTC
+            const slotEnd = new Date(Date.UTC(year, month - 1, day, hour + 6, 0, 0)); // +6 for end time
             
             console.log(`🕐 Verificando slot ${hour}:00 (${slotStart.toISOString()} - ${slotEnd.toISOString()})`);
             
