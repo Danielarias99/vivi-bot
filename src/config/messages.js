@@ -141,8 +141,77 @@ resourceSelectionPrompt: (category) => `Has seleccionado la categoría: **${cate
       confirmCancel: '✅ Tu cita ha sido cancelada exitosamente.\n\n¡Gracias por avisarnos! Si necesitas algo más, escribe "hola" para comenzar de nuevo.',
       askModifyField: '¿Qué deseas modificar?\n1️⃣ Tipo de cita (presencial/virtual)\n2️⃣ Día y hora',
       askNewType: '¿Qué tipo de cita prefieres?\n1. Presencial\n2. Virtual',
-      askNewDay: '¿Qué día prefieres para tu cita?\n\nPor favor indica el día de la semana (ejemplo: lunes, martes, etc.)\n\nSi no tienes preferencia, escribe "cualquier día".',
-      askNewTime: 'Ahora, ¿qué horario prefieres?\n\nPor favor indica la hora (ejemplo: 10:30 a.m. o 14:00)\n\nSi no tienes preferencia, escribe "cualquier hora".',
+      askNewDay: (dates) => {
+        let message = '📅 ¿Qué día prefieres para tu nueva cita?\n\n';
+        
+        // Group by week
+        const now = new Date();
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+        
+        const thisWeek = dates.filter(d => new Date(d.date) <= endOfWeek);
+        const nextWeek = dates.filter(d => new Date(d.date) > endOfWeek);
+        
+        let counter = 1;
+        
+        if (thisWeek.length > 0) {
+          message += '📆 ESTA SEMANA:\n';
+          thisWeek.forEach(date => {
+            const num = counter === 10 ? '1️⃣0️⃣' : `${counter}️⃣`;
+            message += `${num} ${date.formatted}\n`;
+            counter++;
+          });
+          message += '\n';
+        }
+        
+        if (nextWeek.length > 0) {
+          message += '📆 PRÓXIMA SEMANA:\n';
+          nextWeek.forEach(date => {
+            const num = counter === 10 ? '1️⃣0️⃣' : `${counter}️⃣`;
+            message += `${num} ${date.formatted}\n`;
+            counter++;
+          });
+        }
+        
+        message += '\nResponde con el número (1-10)';
+        return message;
+      },
+      askNewTime: (times, selectedDate) => {
+        let message = `🕐 ¿Qué hora prefieres para ${selectedDate}?\n\n`;
+        
+        const morningTimes = times.filter(t => t.isMorning && t.available);
+        const afternoonTimes = times.filter(t => !t.isMorning && t.available);
+        
+        let counter = 1;
+        
+        if (morningTimes.length > 0) {
+          message += '🌅 MAÑANA (8:00 AM - 12:00 PM):\n';
+          morningTimes.forEach(time => {
+            message += `${counter}️⃣ ${time.timeFormatted}\n`;
+            time.index = counter;
+            counter++;
+          });
+          message += '\n';
+        }
+        
+        if (afternoonTimes.length > 0) {
+          message += '🌆 TARDE (2:00 PM - 5:00 PM):\n';
+          afternoonTimes.forEach(time => {
+            message += `${counter}️⃣ ${time.timeFormatted}\n`;
+            time.index = counter;
+            counter++;
+          });
+        }
+        
+        const busyTimes = times.filter(t => !t.available);
+        if (busyTimes.length > 0) {
+          message += '\n❌ No disponibles: ';
+          message += busyTimes.map(t => t.timeFormatted).join(', ');
+        }
+        
+        message += '\n\nResponde con el número de tu horario preferido';
+        return message;
+      },
       modifySuccess: '✅ Tu cita ha sido modificada exitosamente. Te enviaremos una confirmación con los nuevos datos por correo.\n\n¡Gracias! Si necesitas algo más, escribe "hola" para comenzar de nuevo.',
     },
   };

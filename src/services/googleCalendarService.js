@@ -566,14 +566,14 @@ export const updateCalendarEvent = async (eventId, updates) => {
         const event = existingEvent.data;
         
         // Update date/time if provided
-        if (updates.day && updates.time) {
-            const newStart = parseAppointmentDateTime(updates.day, updates.time);
-            if (newStart) {
-                event.start.dateTime = newStart.toISOString();
-                const newEnd = new Date(newStart);
-                newEnd.setHours(newEnd.getHours() + 1);
-                event.end.dateTime = newEnd.toISOString();
-            }
+        if (updates.datetime) {
+            // Usar el datetime directamente (ya es un Date object)
+            const newStart = updates.datetime;
+            event.start.dateTime = newStart.toISOString();
+            const newEnd = new Date(newStart);
+            newEnd.setHours(newEnd.getHours() + 1);
+            event.end.dateTime = newEnd.toISOString();
+            console.log(`🔄 Nueva fecha en Calendar: ${newStart.toISOString()}`);
         }
         
         // Update type in description if provided

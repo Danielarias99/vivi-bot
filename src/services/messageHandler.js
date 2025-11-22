@@ -1060,7 +1060,10 @@ if (normalized === '4' ||
         } else if (lower === '2' || lower.includes('día') || lower.includes('dia') || lower.includes('hora')) {
           state.modifyField = 'dayTime';
           state.step = 'newDay';
-          response = messages.cancelModify.askNewDay;
+          
+          // Get available dates from Calendar
+          const availableDates = await calendarService.getAvailableDates();
+          response = messages.cancelModify.askNewDay(availableDates);
         } else {
           response = 'Por favor, elige 1 o 2.';
         }
@@ -1081,36 +1084,51 @@ if (normalized === '4' ||
         return;
       }
       case 'newDay': {
+        // 🆕 Usar el mismo sistema que el agendamiento nuevo
         const text = message.trim();
-        const lower = text.toLowerCase();
-        const dias = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes'];
-        const tieneDia = dias.some(d => lower.includes(d));
+        const selectedIndex = parseInt(text);
         
-        if (!tieneDia && lower !== 'cualquier dia' && lower !== 'cualquier día') {
-          response = 'Por favor indica un día de la semana válido. Ejemplos: "lunes", "martes", etc..';
-        } else {
-          state.newDay = text;
-          state.step = 'newTime';
-          response = messages.cancelModify.askNewTime;
+        // Get available dates from Calendar
+        const availableDates = await calendarService.getAvailableDates();
+        
+        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > availableDates.length) {
+          response = `Por favor selecciona un número válido entre 1 y ${availableDates.length}`;
+          await whatsappService.sendMessage(to, response);
+          return;
         }
-        break;
+        
+        const selectedDate = availableDates[selectedIndex - 1];
+        state.newDay = selectedDate.formatted;  // Para mostrar al usuario
+        state.newDayISO = selectedDate.date;    // Formato YYYY-MM-DD para Calendar
+        state.step = 'newTime';
+        
+        // Get available times for selected date
+        const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.date);
+        response = messages.cancelModify.askNewTime(availableTimes, selectedDate.formatted);
+        
+        await whatsappService.sendMessage(to, response);
+        return;
       }
       case 'newTime': {
         const text = message.trim();
-        const lower = text.toLowerCase();
-        const re24h = /\b([01]?\d|2[0-3]):[0-5]\d\b/;
-        const re12h = /\b(1[0-2]|0?[1-9]):[0-5]\d\s?(a\.?m\.?|p\.?m\.?|am|pm)\b/i;
-        const tieneHora = re24h.test(lower) || re12h.test(lower) || 
-                          lower === 'cualquier hora';
-
-        if (!tieneHora) {
-          response = 'Por favor indica una hora válida. Ejemplos: "10:30 a.m.", "14:00", "3:00 p.m."\n\nO escribe "cualquier hora".';
-        } else {
-          state.newTime = text;
-          await this.completeModification(to, state);
+        const selectedIndex = parseInt(text);
+        
+        // Get available times again (we need the array)
+        const availableTimes = await calendarService.getAvailableTimesForDate(state.newDayISO);
+        const availableOnly = availableTimes.filter(t => t.available);
+        
+        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > availableOnly.length) {
+          response = `Por favor selecciona un número válido entre 1 y ${availableOnly.length}`;
+          await whatsappService.sendMessage(to, response);
           return;
         }
-        break;
+        
+        const selectedTime = availableOnly[selectedIndex - 1];
+        state.newTime = selectedTime.timeFormatted;  // Para mostrar al usuario
+        state.newTimeISO = selectedTime.time;        // Formato HH:MM para Calendar
+        
+        await this.completeModification(to, state);
+        return;
       }
       default:
         response = messages.notUnderstood;
@@ -1213,11 +1231,18 @@ if (normalized === '4' ||
         calendarUpdates.type = state.newValue;
         console.log(`🔄 Nuevo tipo: ${state.newValue}`);
       } else if (state.modifyField === 'dayTime') {
-        updatedRow[6] = state.newDay;  // Columna G: Día
-        updatedRow[7] = state.newTime; // Columna H: Hora
-        calendarUpdates.day = state.newDay;
-        calendarUpdates.time = state.newTime;
-        console.log(`🔄 Nuevo día: ${state.newDay}, Nueva hora: ${state.newTime}`);
+        updatedRow[6] = state.newDay;     // Columna G: Día (formato legible)
+        updatedRow[7] = state.newTime;    // Columna H: Hora (formato legible)
+        
+        // 🆕 Construir datetime para Calendar (usar formato ISO)
+        const dateTimeString = `${state.newDayISO}T${state.newTimeISO}:00-05:00`;
+        const newDateTime = new Date(dateTimeString);
+        
+        // Actualizar también la columna de Fecha Calculada (columna J, índice 9)
+        updatedRow[9] = newDateTime.toISOString();
+        
+        calendarUpdates.datetime = newDateTime;  // Pasar Date object, no strings
+        console.log(`🔄 Nueva fecha/hora: ${state.newDay} ${state.newTime} (ISO: ${newDateTime.toISOString()})`);
       }
       
       // 🆕 Actualizar evento en Calendar si existe
