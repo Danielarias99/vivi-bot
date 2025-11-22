@@ -360,6 +360,16 @@ export const getAvailableTimesForDate = async (dateStr) => {
         const busyEvents = response.data.items || [];
         console.log(`📋 Eventos ocupados en ${dateStr}: ${busyEvents.length}`);
         
+        // Log each busy event for debugging
+        if (busyEvents.length > 0) {
+            console.log('🔍 Detalle de eventos ocupados:');
+            busyEvents.forEach(event => {
+                const eventStart = new Date(event.start.dateTime || event.start.date);
+                const eventEnd = new Date(event.end.dateTime || event.end.date);
+                console.log(`  - ${event.summary}: ${eventStart.toLocaleString('es-CO', { timeZone: 'America/Bogota' })} - ${eventEnd.toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`);
+            });
+        }
+        
         // Define working hours: 8-12 AM and 2-5 PM
         const morningHours = [8, 9, 10, 11];
         const afternoonHours = [14, 15, 16];
@@ -369,20 +379,31 @@ export const getAvailableTimesForDate = async (dateStr) => {
         const now = new Date();
         
         for (const hour of allHours) {
-            const slotStart = new Date(targetDate);
-            slotStart.setHours(hour, 0, 0, 0);
+            // Create slot times in Colombia timezone
+            const slotStart = new Date(dateStr + 'T' + String(hour).padStart(2, '0') + ':00:00-05:00');
+            const slotEnd = new Date(dateStr + 'T' + String(hour + 1).padStart(2, '0') + ':00:00-05:00');
             
-            const slotEnd = new Date(slotStart);
-            slotEnd.setHours(hour + 1);
+            console.log(`🕐 Verificando slot ${hour}:00 (${slotStart.toISOString()} - ${slotEnd.toISOString()})`);
             
             // Skip past time slots
-            if (slotStart <= now) continue;
+            if (slotStart <= now) {
+                console.log(`  ⏭️ Slot pasado, omitiendo`);
+                continue;
+            }
             
             // Check if this slot conflicts with any busy event
             const hasConflict = busyEvents.some(event => {
                 const eventStart = new Date(event.start.dateTime || event.start.date);
                 const eventEnd = new Date(event.end.dateTime || event.end.date);
-                return (slotStart < eventEnd && slotEnd > eventStart);
+                const conflicts = (slotStart < eventEnd && slotEnd > eventStart);
+                
+                if (conflicts) {
+                    console.log(`  ❌ CONFLICTO detectado con: ${event.summary}`);
+                    console.log(`     Evento: ${eventStart.toISOString()} - ${eventEnd.toISOString()}`);
+                    console.log(`     Slot:   ${slotStart.toISOString()} - ${slotEnd.toISOString()}`);
+                }
+                
+                return conflicts;
             });
             
             const timeFormatted = hour < 12 
@@ -390,6 +411,8 @@ export const getAvailableTimesForDate = async (dateStr) => {
                 : hour === 12 
                     ? '12:00 PM' 
                     : `${hour - 12}:00 PM`;
+            
+            console.log(`  ✅ Slot ${hour}:00 => ${hasConflict ? 'OCUPADO' : 'DISPONIBLE'}`);
             
             availableTimes.push({
                 time: `${hour}:00`,
