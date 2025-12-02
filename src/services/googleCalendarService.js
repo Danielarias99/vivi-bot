@@ -341,7 +341,11 @@ export const getAvailableTimesForDate = async (dateStr) => {
         console.log(`🕐 Obteniendo horarios disponibles para ${dateStr}...`);
         
         const authClient = await getAuth();
-        const targetDate = new Date(dateStr + 'T00:00:00');
+        
+        // Parse date using same approach as getAvailableSlots (local time)
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day);
+        
         const startOfDay = new Date(targetDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(targetDate);
@@ -379,12 +383,12 @@ export const getAvailableTimesForDate = async (dateStr) => {
         const now = new Date();
         
         for (const hour of allHours) {
-            // Parse the date correctly to avoid timezone issues
-            const [year, month, day] = dateStr.split('-').map(Number);
+            // Use same approach as getAvailableSlots (local time, consistent with now)
+            const slotStart = new Date(targetDate);
+            slotStart.setHours(hour, 0, 0, 0);
             
-            // Create dates in UTC, converting from Colombia time (UTC-5)
-            const slotStart = new Date(Date.UTC(year, month - 1, day, hour + 5, 0, 0)); // +5 to convert Colombia time to UTC
-            const slotEnd = new Date(Date.UTC(year, month - 1, day, hour + 6, 0, 0)); // +6 for end time
+            const slotEnd = new Date(slotStart);
+            slotEnd.setHours(hour + 1);
             
             console.log(`🕐 Verificando slot ${hour}:00 (${slotStart.toISOString()} - ${slotEnd.toISOString()})`);
             
