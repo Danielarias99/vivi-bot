@@ -383,16 +383,15 @@ export const getAvailableTimesForDate = async (dateStr) => {
         const now = new Date();
         
         for (const hour of allHours) {
-            // Use same approach as getAvailableSlots (local time, consistent with now)
-            const slotStart = new Date(targetDate);
-            slotStart.setHours(hour, 0, 0, 0);
+            // Create slots in UTC, converting from Colombia time (UTC-5)
+            // Events from Google Calendar API come in UTC, so we need to match that format
+            // Example: 9:00 AM Colombia = 14:00 UTC (9 + 5 = 14)
+            const slotStart = new Date(Date.UTC(year, month - 1, day, hour + 5, 0, 0));
+            const slotEnd = new Date(Date.UTC(year, month - 1, day, hour + 5 + 1, 0, 0));
             
-            const slotEnd = new Date(slotStart);
-            slotEnd.setHours(hour + 1);
+            console.log(`🕐 Verificando slot ${hour}:00 Colombia (${slotStart.toISOString()} UTC)`);
             
-            console.log(`🕐 Verificando slot ${hour}:00 (${slotStart.toISOString()} - ${slotEnd.toISOString()})`);
-            
-            // Skip past time slots
+            // Skip past time slots (compare in UTC)
             if (slotStart <= now) {
                 console.log(`  ⏭️ Slot pasado, omitiendo`);
                 continue;
