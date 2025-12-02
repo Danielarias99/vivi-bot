@@ -1098,12 +1098,26 @@ if (normalized === '4' ||
         }
         
         const selectedDate = availableDates[selectedIndex - 1];
+        
+        // Get available times for selected date
+        const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.date);
+        const availableOnly = availableTimes.filter(t => t.available);
+        
+        // 🆕 VALIDAR SI HAY HORARIOS DISPONIBLES ANTES DE CONTINUAR
+        if (availableOnly.length === 0) {
+          response = `⚠️ Lo sentimos, no hay horarios disponibles para ${selectedDate.formatted}. Todos los espacios están ocupados o ya pasaron.\n\n📅 Por favor selecciona otro día:\n\n`;
+          response += messages.cancelModify.askNewDay(availableDates);
+          await whatsappService.sendMessage(to, response);
+          // Mantener el step en 'newDay' para que el usuario seleccione otro día
+          return;
+        }
+        
+        // Guardar los horarios disponibles en el estado para no consultarlos de nuevo
+        state.availableTimes = availableOnly;
         state.newDay = selectedDate.formatted;  // Para mostrar al usuario
         state.newDayISO = selectedDate.date;    // Formato YYYY-MM-DD para Calendar
         state.step = 'newTime';
         
-        // Get available times for selected date
-        const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.date);
         response = messages.cancelModify.askNewTime(availableTimes, selectedDate.formatted);
         
         await whatsappService.sendMessage(to, response);
@@ -1113,9 +1127,24 @@ if (normalized === '4' ||
         const text = message.trim();
         const selectedIndex = parseInt(text);
         
-        // Get available times again (we need the array)
-        const availableTimes = await calendarService.getAvailableTimesForDate(state.newDayISO);
-        const availableOnly = availableTimes.filter(t => t.available);
+        // 🆕 Usar los horarios guardados en el estado (más eficiente y consistente)
+        let availableOnly = state.availableTimes;
+        
+        // Fallback: si no están en el estado, consultarlos de nuevo
+        if (!availableOnly || availableOnly.length === 0) {
+          const availableTimes = await calendarService.getAvailableTimesForDate(state.newDayISO);
+          availableOnly = availableTimes.filter(t => t.available);
+        }
+        
+        // 🆕 Validar que hay opciones disponibles
+        if (!availableOnly || availableOnly.length === 0) {
+          response = `⚠️ Ya no hay horarios disponibles para ${state.newDay}. Vamos a seleccionar otro día.\n\n`;
+          state.step = 'newDay';
+          const availableDates = await calendarService.getAvailableDates();
+          response += messages.cancelModify.askNewDay(availableDates);
+          await whatsappService.sendMessage(to, response);
+          return;
+        }
         
         if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > availableOnly.length) {
           response = `Por favor selecciona un número válido entre 1 y ${availableOnly.length}`;
