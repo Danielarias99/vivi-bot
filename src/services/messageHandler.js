@@ -1099,8 +1099,8 @@ if (normalized === '4' ||
         
         const selectedDate = availableDates[selectedIndex - 1];
         
-        // Get available times for selected date
-        const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.date);
+        // Get available times for selected date (use dateStr which is "YYYY-MM-DD" format)
+        const availableTimes = await calendarService.getAvailableTimesForDate(selectedDate.dateStr);
         const availableOnly = availableTimes.filter(t => t.available);
         
         // 🆕 VALIDAR SI HAY HORARIOS DISPONIBLES ANTES DE CONTINUAR
@@ -1115,7 +1115,7 @@ if (normalized === '4' ||
         // Guardar los horarios disponibles en el estado para no consultarlos de nuevo
         state.availableTimes = availableOnly;
         state.newDay = selectedDate.formatted;  // Para mostrar al usuario
-        state.newDayISO = selectedDate.date;    // Formato YYYY-MM-DD para Calendar
+        state.newDayISO = selectedDate.dateStr; // Formato YYYY-MM-DD para Calendar
         state.step = 'newTime';
         
         response = messages.cancelModify.askNewTime(availableTimes, selectedDate.formatted);
