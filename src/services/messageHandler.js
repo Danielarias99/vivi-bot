@@ -1278,10 +1278,25 @@ if (normalized === '4' ||
       const eventId = appointment.fullRow[10]; // Columna K (index 10): Calendar Event ID
       if (eventId && eventId !== 'N/A') {
         console.log(`📅 Actualizando evento en Calendar: ${eventId}`);
-        await calendarService.updateCalendarEvent(eventId, calendarUpdates);
+        try {
+          const calendarUpdated = await calendarService.updateCalendarEvent(eventId, calendarUpdates);
+          if (!calendarUpdated) {
+            console.warn('⚠️ No se pudo actualizar evento en Calendar, pero continuando con Sheets');
+          } else {
+            console.log('✅ Evento actualizado en Calendar exitosamente');
+          }
+        } catch (calError) {
+          console.error('❌ Error actualizando Calendar (continuando con Sheets):', calError?.message || calError);
+          // Continuar con la actualización de Sheets aunque falle Calendar
+        }
+      } else {
+        console.log('⚠️ No hay Event ID para actualizar en Calendar');
       }
       
+      // Actualizar Sheets (esto debe ejecutarse siempre, incluso si Calendar falla)
+      console.log('📊 Actualizando fila en Google Sheets...');
       await updateRowInSheet(appointment.rowIndex, updatedRow, 'citas');
+      console.log('✅ Fila actualizada en Sheets exitosamente');
       
       const response = messages.cancelModify.modifySuccess;
       await whatsappService.sendMessage(to, response);

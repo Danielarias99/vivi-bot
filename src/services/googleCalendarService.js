@@ -573,10 +573,16 @@ export const updateCalendarEvent = async (eventId, updates) => {
             // Usar el datetime directamente (ya es un Date object)
             const newStart = updates.datetime;
             event.start.dateTime = newStart.toISOString();
+            // 🆕 Mantener timeZone para consistencia con eventos creados
+            event.start.timeZone = event.start.timeZone || 'America/Bogota';
+            
             const newEnd = new Date(newStart);
             newEnd.setHours(newEnd.getHours() + 1);
             event.end.dateTime = newEnd.toISOString();
-            console.log(`🔄 Nueva fecha en Calendar: ${newStart.toISOString()}`);
+            // 🆕 Mantener timeZone para consistencia con eventos creados
+            event.end.timeZone = event.end.timeZone || 'America/Bogota';
+            
+            console.log(`🔄 Nueva fecha en Calendar: ${newStart.toISOString()} (timeZone: ${event.start.timeZone})`);
         }
         
         // Update type in description if provided
