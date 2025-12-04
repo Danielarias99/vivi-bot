@@ -184,16 +184,23 @@ async function getPendingAppointments() {
     const whatsappIndex = headers.indexOf('WhatsApp');
     const typeIndex = headers.indexOf('Tipo de Cita');
     const nameIndex = headers.indexOf('Nombre Completo');
-    const dayIndex = headers.indexOf('Día');
+    // 🆕 Buscar 'Dia' o 'Día' para compatibilidad (el sheet usa 'Dia' sin tilde)
+    const dayIndex = headers.indexOf('Dia') !== -1 ? headers.indexOf('Dia') : headers.indexOf('Día');
     const timeIndex = headers.indexOf('Hora');
     const reminderSentIndex = headers.indexOf('Recordatorio Enviado');
     
     console.log(`📍 Índices de columnas encontrados:`);
     console.log(`   - WhatsApp: ${whatsappIndex}`);
     console.log(`   - Nombre: ${nameIndex}`);
-    console.log(`   - Día: ${dayIndex}`);
+    console.log(`   - Día: ${dayIndex} (${dayIndex !== -1 ? headers[dayIndex] : 'NO ENCONTRADO'})`);
     console.log(`   - Hora: ${timeIndex}`);
     console.log(`   - Recordatorio Enviado: ${reminderSentIndex}`);
+    
+    // 🆕 Validar que se encontró el índice del día
+    if (dayIndex === -1) {
+      console.error('❌ No se encontró la columna "Dia" o "Día" en el sheet');
+      console.log(`📋 Encabezados disponibles: ${headers.join(', ')}`);
+    }
     
     const hasReminderColumn = reminderSentIndex !== -1;
     
