@@ -141,20 +141,37 @@ function needsReminder(appointmentDate) {
   }
   
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
   
-  const dayAfterTomorrow = new Date(tomorrow);
-  dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
+  // 🆕 Normalizar fechas a solo día/mes/año (sin hora) para comparación precisa
+  // Convertir a zona horaria de Colombia y obtener solo la fecha
+  const nowColombiaStr = now.toLocaleDateString('en-US', { timeZone: 'America/Bogota' });
+  const appointmentColombiaStr = appointmentDate.toLocaleDateString('en-US', { timeZone: 'America/Bogota' });
   
-  console.log(`   📅 Ahora: ${now.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
-  console.log(`   📅 Mañana: ${tomorrow.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
-  console.log(`   📅 Cita: ${appointmentDate.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  // Parsear fechas normalizadas (MM/DD/YYYY)
+  const [nowMonth, nowDay, nowYear] = nowColombiaStr.split('/').map(Number);
+  const [appMonth, appDay, appYear] = appointmentColombiaStr.split('/').map(Number);
   
-  // La cita es mañana si está entre mañana 00:00 y pasado mañana 00:00
-  const isForTomorrow = appointmentDate >= tomorrow && appointmentDate < dayAfterTomorrow;
-  console.log(`   🔔 ¿Es para mañana?: ${isForTomorrow}`);
+  // Crear fechas normalizadas (solo día/mes/año, sin hora)
+  const today = new Date(nowYear, nowMonth - 1, nowDay);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const appointmentDay = new Date(appYear, appMonth - 1, appDay);
+  
+  console.log(`   📅 Hoy (Colombia): ${today.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  console.log(`   📅 Mañana (Colombia): ${tomorrow.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  console.log(`   📅 Cita (Colombia): ${appointmentDay.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`);
+  
+  // 🆕 La cita necesita recordatorio solo si es exactamente mañana (comparación por fecha, no hora)
+  const isForTomorrow = appointmentDay.getTime() === tomorrow.getTime();
+  
+  // 🆕 Validación adicional: no enviar si la cita es hoy o ya pasó
+  if (appointmentDay.getTime() <= today.getTime()) {
+    console.log(`   ⏭️ Cita es hoy o ya pasó, no se envía recordatorio`);
+    return false;
+  }
+  
+  console.log(`   🔔 ¿Es para mañana?: ${isForTomorrow ? 'SÍ ✅' : 'NO ❌'}`);
   
   return isForTomorrow;
 }
